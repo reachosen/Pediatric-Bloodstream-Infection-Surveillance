@@ -1,0 +1,13 @@
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.project_id
+.github_repo
+.env
+.env.*
+.streamlit/secrets.toml
+.grok/
+.vercel/
+screenshots/
+artifacts/
