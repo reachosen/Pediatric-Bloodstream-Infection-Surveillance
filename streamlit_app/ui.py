@@ -252,8 +252,16 @@ a.q-row:hover { background: var(--bg-elevated); }
 
 .two-col { display: grid !important; gap: 1.5rem; margin-top: 1rem; }
 @media (min-width: 900px) { .two-col { grid-template-columns: 1fr auto; } }
-.foot { display: grid !important; gap: 1.5rem; border-top: 1px solid var(--line); padding-top: 2rem; margin-top: 2.5rem; }
-@media (min-width: 700px) { .foot { grid-template-columns: 1fr 1fr; } }
+.foot { border-top: 1px solid var(--line); padding-top: 2rem; margin-top: 2.5rem; }
+.status-grid { display: grid !important; gap: 0.85rem; }
+@media (min-width: 800px) { .status-grid { grid-template-columns: 1fr 1fr 1fr; } }
+.status-card { border-radius: 12px; padding: 1rem 1.1rem; min-height: 100%; }
+.status-card .when {
+  font-size: 0.8rem; line-height: 1.45; margin-top: 0.7rem; padding-top: 0.7rem;
+  border-top: 1px solid rgb(28 26 22 / 0.1); color: var(--ink-muted);
+}
+.status-card .when strong { color: inherit; font-weight: 600; }
+.status-now { margin-top: 0.85rem; }
 .muted { color: var(--ink-muted); font-size: 0.9rem; line-height: 1.5; }
 .mono { font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; line-height: 1.5; background: var(--bg); border-radius: 12px; padding: 1rem; overflow: auto; white-space: pre-wrap; }
 .gap-item { background: var(--bg); border-radius: 8px; padding: 0.75rem; margin-top: 0.6rem; }
@@ -355,6 +363,66 @@ def verdict_pair(result: dict, large: bool = False) -> str:
 """
 
 
+STATUS_GUIDE = {
+    "biofilm-not-supported": {
+        "tone": "ok",
+        "title": "Salvage the line",
+        "means": "Keep the CVC. Treat through it with targeted antibiotics. For oncology, transplant, and CF, that line is often a last remaining access site — pulling it delays treatment and burns a vein they may never get back.",
+        "when": "Fires when the line is not the source: MBI-LCBI, Secondary BSI, or ΔTTP under 120 min (no biofilm pattern).",
+    },
+    "biofilm-supported": {
+        "tone": "danger",
+        "title": "Extract the line",
+        "means": "Remove the catheter. Endoluminal biofilm will not yield to systemic antibiotics. Leaving it in risks persistent BSI, shock, or endocarditis.",
+        "when": "Fires when ΔTTP is 120 min or more — the central bottle flagged at least two hours before the peripheral, pointing to high burden inside the line.",
+    },
+    "missing-data": {
+        "tone": "warn",
+        "title": "Draw a peripheral set",
+        "means": "Obtain a limb-vein culture now, paired with the line draw. Without it, salvage vs extract is a guess — a contaminant, a gut translocation, and a true biofilm all look the same.",
+        "when": "Fires as a gold gap the moment a central culture is positive and no simultaneous peripheral is on file.",
+    },
+}
+
+
+def status_card_html(key: str) -> str:
+    s = STATUS_GUIDE[key]
+    return f"""
+<article class="status-card lane {s['tone']}">
+  <p class="label-micro">Bedside status</p>
+  <p class="lane-title" style="font-size:1.2rem">{escape(s['title'])}</p>
+  <p class="lane-sub" style="margin-top:0.45rem">{escape(s['means'])}</p>
+  <p class="when">When — {escape(s['when'])}</p>
+</article>
+"""
+
+
+def status_key_html() -> str:
+    cards = "".join(status_card_html(k) for k in STATUS_GUIDE)
+    return f"""
+<p class="label-micro" style="margin-top:2.25rem">Bedside statuses</p>
+<h2 class="display">What the right column means</h2>
+<p class="muted" style="max-width:40rem;margin:0.6rem 0 0">Surveillance class (left) is a quality call. The right column is a clinical order: keep the line, pull it, or get the missing draw before anyone guesses.</p>
+<div class="status-grid" style="margin-top:1rem">{cards}</div>
+"""
+
+
+def status_explain_html(status: str) -> str:
+    s = STATUS_GUIDE.get(status)
+    if not s:
+        return ""
+    return f"""
+<div class="status-now">
+  <article class="status-card lane {s['tone']}">
+    <p class="label-micro">What this bedside status means</p>
+    <p class="lane-title" style="font-size:1.25rem">{escape(s['title'])}</p>
+    <p class="lane-sub" style="margin-top:0.45rem">{escape(s['means'])}</p>
+    <p class="when">When — {escape(s['when'])}</p>
+  </article>
+</div>
+"""
+
+
 def header_html(active: str, window_label: str) -> str:
     q = "current" if active in ("queue", "case") else ""
     s = "current" if active == "spec" else ""
@@ -438,10 +506,7 @@ def queue_html(cases: list[dict], accepted: dict[str, bool]) -> str:
   {''.join(rows)}
 </div>
 <div class="foot">
-  <div><p class="label-micro">Quality value</p><h3 class="display">Protect the SIR</h3>
-    <p class="muted">MBI-LCBI and secondary BSI are reportable in NHSN but do not belong in the CLABSI Standardized Infection Ratio. Aegis isolates them before they become an unfair penalty.</p></div>
-  <div><p class="label-micro">Clinical value</p><h3 class="display">Salvage the line</h3>
-    <p class="muted">Differential time to positivity is invisible to surveillance. The bedside lane uses it so a Broviac in neutropenia is not pulled on reflex — and a biofilm-positive PICC is not left in.</p></div>
+  {status_key_html()}
 </div>
 """
 
@@ -588,6 +653,7 @@ def case_html(c: dict, result: dict, accepted: bool) -> str:
 <p class="muted">{c['patient']['ageYears']}{escape(c['patient']['sex'])} · {escape(c['patient']['diagnosis'])}</p>
 <p class="lede">{escape(c['whyItMatters'])}</p>
 <div style="margin-top:1.25rem">{verdict_pair(result, large=True)}</div>
+{status_explain_html(result['bedside']['status'])}
 <div class="stack" style="margin-top:1.5rem">
   <section class="card">
     <div style="display:flex;justify-content:space-between"><p class="label-micro">Infection window period</p>
@@ -711,6 +777,7 @@ def spec_html(cases: list[dict]) -> str:
 <p class="edition">Streamlit edition · synthetic cases</p>
 <h1 class="display">Four surveillance layers. One bedside question.</h1>
 <p class="lede">The JSON below is the source of truth for expected outcomes. Every test case is synthetic: names, MRNs, units, cultures, and timestamps are invented. The live engine evaluates the same objects.</p>
+{status_key_html()}
 <div class="grid-2" style="margin-top:1.5rem">{step_html}</div>
 <h2 class="display" style="margin:2rem 0 0.5rem">Synthetic JSON test cases</h2>
 <p class="muted">Not real patients or PHI. Each fixture carries an expected object. The engine must match it.</p>

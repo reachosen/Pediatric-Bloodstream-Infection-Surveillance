@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Pair layout: surveillance class | bedside action, teal / pink / gold. v3
+# Pair layout + bedside status key (salvage / extract / draw). v4
 
 import sys
 from pathlib import Path
