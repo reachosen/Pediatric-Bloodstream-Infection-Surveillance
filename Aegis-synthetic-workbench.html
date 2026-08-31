@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Aegis — synthetic BSI adjudication</title>
+
+<style>
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  margin: 0;
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+.shell { max-width: 72rem; margin: 0 auto; padding: 0 1.25rem 3rem; }
+.page { display: none; }
+.page.on { display: block; }
+.notice {
+  background: var(--ok-soft); color: var(--ok);
+  text-align: center; font-size: 0.8rem; padding: 0.55rem 1rem;
+  letter-spacing: 0.04em;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap');
+
+:root {
+  --bg: #f3efe6;
+  --bg-elevated: #faf8f3;
+  --surface: #fffcf7;
+  --ink: #1c1a16;
+  --ink-muted: #5e5a53;
+  --ink-subtle: #8a857c;
+  --line: #e4dfd4;
+  --accent: #1a4a46;
+  --accent-fg: #f3efe6;
+  --accent-soft: #dce8e6;
+  --danger: #c45c6a;
+  --danger-soft: #f8e2e5;
+  --warn: #c4892a;
+  --warn-soft: #f6e9cc;
+  --ok: #1a4a46;
+  --ok-soft: #d7ebe6;
+  --shadow: 0 0 0 1px rgb(28 26 22 / 0.06), 0 1px 2px -1px rgb(28 26 22 / 0.06), 0 2px 4px 0 rgb(28 26 22 / 0.04);
+}
+
+html, body, [data-testid="stAppViewContainer"], .stApp, [data-testid="stApp"] {
+  background: var(--bg) !important;
+  color: var(--ink);
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+.stApp > header,
+header[data-testid="stHeader"] {
+  display: none !important;
+  height: 0 !important;
+}
+[data-testid="stAppViewContainer"] > .main { background: var(--bg) !important; }
+.block-container {
+  max-width: 72rem !important;
+  padding: 0 1.25rem 3rem !important;
+}
+[data-testid="stVerticalBlock"] { gap: 0 !important; }
+.stMarkdown, .stMarkdown p { color: var(--ink); }
+a { color: var(--accent); text-decoration: none; }
+
+.aegis-shell { color: var(--ink); }
+.aegis-header {
+  display: flex !important; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.85rem 0; border-bottom: 1px solid var(--line); margin-bottom: 1.75rem;
+}
+.brand { display: flex !important; align-items: center; gap: 0.7rem; color: var(--ink); }
+.brand-mark {
+  width: 28px; height: 28px; flex-shrink: 0; color: var(--accent); position: relative; display: block;
+}
+.brand-mark::before {
+  content: ""; position: absolute; inset: 0;
+  border: 1.6px solid currentColor;
+  border-radius: 42% 42% 38% 38% / 28% 28% 54% 54%;
+}
+.brand-mark::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 12px; height: 12px; transform: translate(-50%, -50%);
+  background:
+    linear-gradient(currentColor, currentColor) center / 12px 1.6px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1.6px 12px no-repeat;
+}
+.brand-name { font-family: "Source Serif 4", Georgia, serif; font-size: 1.15rem; line-height: 1.1; }
+.brand-sub { display: block; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-subtle); margin-top: 2px; }
+.nav { display: flex !important; gap: 0.25rem; }
+.nav a {
+  display: inline-flex; align-items: center; height: 44px; padding: 0 0.85rem;
+  border-radius: 8px; font-size: 0.9rem; font-weight: 500; color: var(--ink-muted);
+}
+.nav a.current { background: var(--accent-soft); color: var(--accent); }
+.window-meta { text-align: right; font-size: 0.75rem; color: var(--ink-muted); }
+.window-meta strong { display: block; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+.label-micro {
+  display: block;
+  font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-subtle);
+}
+h1.display, h2.display, h3.display, .display {
+  font-family: "Source Serif 4", Georgia, serif; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink);
+  font-weight: 500; margin: 0;
+}
+h1.display { font-size: clamp(2rem, 4vw, 3rem); margin-top: 0.75rem; }
+h2.display { font-size: 1.5rem; }
+p.lede { max-width: 40rem; color: var(--ink-muted); font-size: 1.05rem; line-height: 1.55; margin-top: 1rem; }
+
+.stats { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin: 2rem 0; }
+@media (min-width: 720px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+.stat { background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 1rem; }
+.stat.em { background: var(--accent); color: var(--accent-fg); }
+.stat.ok { background: var(--ok-soft); color: var(--ok); }
+.stat.danger { background: var(--danger-soft); color: var(--danger); }
+.stat .k { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-subtle); }
+.stat.em .k, .stat.em .h { color: rgb(243 239 230 / 0.7); }
+.stat.ok .k, .stat.ok .h, .stat.danger .k, .stat.danger .h { color: inherit; opacity: 0.72; }
+.stat .v { font-family: "Source Serif 4", Georgia, serif; font-size: 1.85rem; font-variant-numeric: tabular-nums; margin-top: 0.5rem; line-height: 1; }
+.stat .h { font-size: 0.75rem; color: var(--ink-muted); margin-top: 0.5rem; }
+
+.queue { background: var(--surface); box-shadow: var(--shadow); border-radius: 16px; overflow: hidden; }
+.q-head, a.q-row, .q-row {
+  display: grid !important; grid-template-columns: 1.35fr 0.95fr minmax(0, 2.6fr);
+  gap: 0.85rem; align-items: stretch; padding: 0.85rem 1.15rem;
+  text-decoration: none !important;
+}
+.q-head {
+  font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-subtle);
+  border-bottom: 1px solid var(--line); align-items: center;
+}
+.q-row { border-top: 1px solid var(--line); color: inherit !important; }
+.q-row:first-of-type { border-top: 0; }
+a.q-row { color: inherit !important; }
+a.q-row:hover { background: var(--bg-elevated); }
+.q-name { font-weight: 500; color: var(--ink); }
+.q-sub { display: block; font-size: 0.85rem; color: var(--ink-muted); }
+.org { font-family: "Source Serif 4", Georgia, serif; font-style: italic; }
+.seq {
+  display: inline-flex; width: 24px; height: 24px; border-radius: 999px; align-items: center; justify-content: center;
+  font-size: 0.75rem; background: var(--line); color: var(--ink-muted); font-variant-numeric: tabular-nums; margin-right: 0.6rem;
+}
+.seq.ok { background: var(--ok-soft); color: var(--ok); }
+
+.pair {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 100%;
+  box-shadow: inset 0 0 0 1px rgb(28 26 22 / 0.08);
+}
+.pair-head {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+}
+.pair-head > span { padding: 0 1rem; }
+.lane {
+  display: block !important;
+  padding: 0.7rem 1rem 0.8rem;
+  border-left: 5px solid var(--ink-subtle);
+  background: var(--bg);
+  min-width: 0;
+}
+.lane.ok { border-left-color: var(--ok); background: var(--ok-soft); }
+.lane.danger { border-left-color: var(--danger); background: var(--danger-soft); }
+.lane.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.lane + .lane { box-shadow: inset 1px 0 0 rgb(28 26 22 / 0.08); }
+.lane-title {
+  display: block;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  margin: 0.2rem 0 0.15rem;
+  color: inherit;
+}
+.lane.ok, .lane.ok .lane-title { color: var(--ok); }
+.lane.danger, .lane.danger .lane-title { color: var(--danger); }
+.lane.warn, .lane.warn .lane-title { color: var(--warn); }
+.lane-sub { display: block; font-size: 0.78rem; color: var(--ink-muted); margin: 0; line-height: 1.35; }
+.pair.pair-lg { border-radius: 16px; box-shadow: var(--shadow); }
+.pair.pair-lg .lane { padding: 1.15rem 1.25rem; }
+.pair.pair-lg .lane-title { font-size: 1.55rem; }
+.legend {
+  display: flex; flex-wrap: wrap; gap: 0.85rem 1.25rem;
+  margin: 0.65rem 0 1rem; font-size: 0.75rem; color: var(--ink-muted);
+}
+.swatch {
+  display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+  margin-right: 0.4rem; vertical-align: -1px;
+}
+.swatch.ok { background: var(--ok); }
+.swatch.danger { background: var(--danger); }
+.swatch.warn { background: var(--warn); }
+
+.badge {
+  display: inline-flex; align-items: center; border-radius: 999px; padding: 0.15rem 0.65rem;
+  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; white-space: nowrap;
+}
+.badge-danger { background: var(--danger-soft); color: var(--danger); }
+.badge-ok { background: var(--ok-soft); color: var(--ok); }
+.badge-warn { background: var(--warn-soft); color: var(--warn); }
+.badge-accent { background: var(--accent-soft); color: var(--accent); }
+.badge-muted { background: var(--line); color: var(--ink-muted); }
+.badge-ink { background: var(--ink); color: var(--accent-fg); }
+
+.card { background: var(--surface); box-shadow: var(--shadow); border-radius: 16px; padding: 1.15rem 1.25rem; }
+.card.warn { box-shadow: var(--shadow), inset 5px 0 0 var(--warn); }
+.card + .card, .stack > * + * { margin-top: 1rem; }
+.grid-2 { display: grid !important; gap: 1rem; }
+@media (min-width: 900px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+.facts { list-style: none; padding: 0; margin: 0; }
+.facts li { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9rem; padding: 0.25rem 0; }
+.facts .k { color: var(--ink-muted); }
+.facts .ok { color: var(--ok); }
+.facts .warn { color: var(--warn); }
+.facts .danger { color: var(--danger); }
+.verdict-bar {
+  margin-top: 0.75rem; background: var(--bg); border-radius: 8px; padding: 0.5rem 0.75rem;
+  font-family: "Source Serif 4", Georgia, serif; font-size: 0.95rem;
+}
+.iwp { display: grid !important; grid-template-columns: repeat(7, 1fr); gap: 0.35rem; margin-top: 0.75rem; }
+.iwp-day { background: var(--bg); border-radius: 8px; text-align: center; padding: 0.5rem 0.2rem; }
+.iwp-day.doe { background: var(--accent); color: var(--accent-fg); }
+.iwp-day .wd { font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
+.iwp-day.doe .wd { color: rgb(243 239 230 / 0.7); }
+.iwp-day .dn { font-family: "Source Serif 4", Georgia, serif; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.iwp-day .anc { font-family: "IBM Plex Mono", monospace; font-size: 0.65rem; margin-top: 0.4rem; color: var(--ink-muted); }
+.iwp-day.doe .anc { color: rgb(243 239 230 / 0.85); }
+.dots { display: flex; justify-content: center; gap: 3px; height: 8px; margin-top: 0.4rem; }
+.dot { width: 6px; height: 6px; border-radius: 99px; background: var(--danger); }
+.dot.ev { background: var(--ok); }
+.dot.fe { background: var(--warn); }
+.iwp-day.doe .dot { background: var(--accent-fg); }
+
+.phases { display: grid !important; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.9rem; }
+@media (min-width: 900px) { .phases { grid-template-columns: repeat(4, 1fr); } }
+.phase { background: var(--bg); border-radius: 12px; padding: 0.75rem; }
+.phase.skipped { opacity: 0.6; }
+.phase p { font-size: 0.75rem; color: var(--ink-muted); line-height: 1.45; margin: 0.4rem 0 0; }
+
+.gauge-track { position: relative; height: 8px; background: var(--bg); border-radius: 99px; margin: 0.5rem 0 1rem; }
+.gauge-mid { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--warn); }
+.gauge-knob {
+  position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 99px; transform: translate(-50%, -50%);
+}
+.delta { font-family: "Source Serif 4", Georgia, serif; font-size: 2rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.stamp { font-family: "Source Serif 4", Georgia, serif; font-size: 1.6rem; line-height: 1.15; margin-top: 0.4rem; }
+.stamp.danger { color: var(--danger); }
+.stamp.ok { color: var(--ok); }
+.stamp.warn { color: var(--warn); }
+.stamp.muted { color: var(--ink-muted); }
+.stamp.accent { color: var(--ok); }
+
+.two-col { display: grid !important; gap: 1.5rem; margin-top: 1rem; }
+@media (min-width: 900px) { .two-col { grid-template-columns: 1fr auto; } }
+.foot { display: grid !important; gap: 1.5rem; border-top: 1px solid var(--line); padding-top: 2rem; margin-top: 2.5rem; }
+@media (min-width: 700px) { .foot { grid-template-columns: 1fr 1fr; } }
+.muted { color: var(--ink-muted); font-size: 0.9rem; line-height: 1.5; }
+.mono { font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; line-height: 1.5; background: var(--bg); border-radius: 12px; padding: 1rem; overflow: auto; white-space: pre-wrap; }
+.gap-item { background: var(--bg); border-radius: 8px; padding: 0.75rem; margin-top: 0.6rem; }
+.gap-item.lane { border-radius: 8px; }
+.action { display: inline-flex; margin-left: 0.4rem; background: var(--warn-soft); color: var(--warn); border-radius: 99px; padding: 0.1rem 0.5rem; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.back { display: inline-flex; align-items: center; height: 44px; color: var(--ink-muted); font-size: 0.9rem; }
+.chart { width: 100%; height: 140px; margin-top: 0.5rem; }
+.edition { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-subtle); }
+
+@media (max-width: 800px) {
+  .q-head { display: none; }
+  .q-row, a.q-row { grid-template-columns: 1fr; gap: 0.5rem; }
+  .window-meta { display: none; }
+}
+@media (max-width: 560px) {
+  .pair { grid-template-columns: 1fr; }
+  .pair .lane + .lane { box-shadow: inset 0 1px 0 rgb(28 26 22 / 0.08); }
+}
+
+div[data-testid="stButton"] > button {
+  background: var(--accent) !important; color: var(--accent-fg) !important;
+  border: 0 !important; border-radius: 8px !important; height: 44px !important;
+  font-weight: 500 !important; font-family: "Source Sans 3", sans-serif !important;
+}
+div[data-testid="stButton"] > button:hover { opacity: 0.92; }
+.stTextArea textarea {
+  background: var(--bg) !important; color: var(--ink) !important;
+  border: 0 !important; box-shadow: var(--shadow) !important; border-radius: 12px !important;
+  font-family: "Source Sans 3", sans-serif !important;
+}
+.stTextArea label { color: var(--ink-muted) !important; font-size: 0.8rem !important; }
+[data-testid="stMarkdownContainer"] pre { display: none !important; }
+[data-testid="stHtml"] { color: inherit; }
+.anc-bars {
+  display: flex; align-items: flex-end; gap: 0.45rem; height: 120px; margin-top: 0.6rem;
+}
+.anc-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  height: 100%; min-width: 0;
+}
+.anc-bar {
+  width: 70%; max-width: 28px; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 4px;
+}
+.anc-lab { font-size: 0.65rem; color: var(--ink-subtle); margin-top: 0.3rem; font-variant-numeric: tabular-nums; }
+</style>
+
+</head>
+<body>
+<p class="notice">All patients, identifiers, and laboratory values are synthetic. Invented for demonstration and engine tests. Not real patients or PHI.</p>
+<div class="shell">
+<div class="page on" id="page-queue">
+<div class="aegis-shell">
+  <header class="aegis-header">
+    <a class="brand" href="#queue">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="brand-name">Aegis</span>
+        <span class="brand-sub">BSI adjudication</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <a class="current" href="#queue">Queue</a>
+      <a class="" href="#spec">Spec</a>
+    </nav>
+    <p class="window-meta">Synthetic review window<strong>18–24 Aug 2026</strong></p>
+  </header>
+</div>
+
+<p class="label-micro">Why this workbench exists</p>
+<p class="edition">Streamlit edition · synthetic cases</p>
+<h1 class="display">A positive blood culture is not a CLABSI.</h1>
+<p class="lede">Five <strong>synthetic</strong> flagged cultures — invented patients, MRNs, and labs, not real records. A naive “line plus bug” rule would have added all five to the SIR. Two belong there. The rest are mucosa, lung, or a single contaminated bottle — and two of the lines should stay in.</p>
+<div class="stats">
+  <div class="stat"><div class="k">Naive CLABSI calls</div><div class="v">5</div><div class="h">Every positive + a line</div></div>
+  <div class="stat em"><div class="k">Aegis SIR numerator</div><div class="v">2</div><div class="h">What NHSN should count</div></div>
+  <div class="stat ok"><div class="k">Lines to salvage</div><div class="v">2</div><div class="h">ΔTTP under 120 min</div></div>
+  <div class="stat danger"><div class="k">Lines to extract</div><div class="v">1</div><div class="h">Biofilm pattern supported</div></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:end;gap:1rem;flex-wrap:wrap;margin:0 0 0.35rem;">
+  <div><p class="label-micro">Synthetic adjudication queue</p><h2 class="display">Open events</h2></div>
+  <p class="muted" style="margin:0">3 of 5 excluded from the SIR</p>
+</div>
+<p class="legend">
+  <span><span class="swatch ok"></span>Teal — excluded / salvage</span>
+  <span><span class="swatch danger"></span>Pink — CLABSI / extract</span>
+  <span><span class="swatch warn"></span>Gold — actionable gap</span>
+</p>
+<div class="queue">
+  <div class="q-head">
+    <span>Patient</span>
+    <span>Organism</span>
+    <span class="pair-head"><span>Surveillance class</span><span>Bedside action</span></span>
+  </div>
+  
+<a class="q-row" href="#case/mbi-chen">
+  <span><span class="seq">1</span><span class="q-name">Maya Chen</span>
+    <span class="q-sub">Peds Oncology 4B</span></span>
+  <span><span class="org">E. coli</span><span class="q-sub">22 Aug · MRN 00821456</span></span>
+  
+<span class="pair">
+  <span class="lane ok">
+    <span class="label-micro">Surveillance class · quality</span>
+    <span class="lane-title">MBI-LCBI</span>
+    <span class="lane-sub">Reported to NHSN · excluded from SIR</span>
+    
+  </span>
+  <span class="lane ok">
+    <span class="label-micro">Bedside action · clinical</span>
+    <span class="lane-title">Salvage the line</span>
+    <span class="lane-sub">ΔTTP 12 min</span>
+    
+  </span>
+</span>
+
+</a>
+<a class="q-row" href="#case/clabsi-reyes">
+  <span><span class="seq">2</span><span class="q-name">Jonah Reyes</span>
+    <span class="q-sub">PICU 1</span></span>
+  <span><span class="org">S. epidermidis</span><span class="q-sub">20 Aug · MRN 00819302</span></span>
+  
+<span class="pair">
+  <span class="lane danger">
+    <span class="label-micro">Surveillance class · quality</span>
+    <span class="lane-title">Primary CLABSI</span>
+    <span class="lane-sub">Counts in SIR numerator</span>
+    
+  </span>
+  <span class="lane danger">
+    <span class="label-micro">Bedside action · clinical</span>
+    <span class="lane-title">Extract the line</span>
+    <span class="lane-sub">ΔTTP 160 min</span>
+    
+  </span>
+</span>
+
+</a>
+<a class="q-row" href="#case/secondary-haddad">
+  <span><span class="seq">3</span><span class="q-name">Amira Haddad</span>
+    <span class="q-sub">Pulmonary 3W</span></span>
+  <span><span class="org">P. aeruginosa</span><span class="q-sub">20 Aug · MRN 00798811</span></span>
+  
+<span class="pair">
+  <span class="lane ok">
+    <span class="label-micro">Surveillance class · quality</span>
+    <span class="lane-title">Secondary BSI</span>
+    <span class="lane-sub">Attributed off the line · not a CLABSI</span>
+    
+  </span>
+  <span class="lane ok">
+    <span class="label-micro">Bedside action · clinical</span>
+    <span class="lane-title">Salvage the line</span>
+    <span class="lane-sub">ΔTTP 18 min</span>
+    
+  </span>
+</span>
+
+</a>
+<a class="q-row" href="#case/gap-park">
+  <span><span class="seq">4</span><span class="q-name">Leo Park</span>
+    <span class="q-sub">Hem/Onc 4A</span></span>
+  <span><span class="org">S. aureus</span><span class="q-sub">23 Aug · MRN 00825019</span></span>
+  
+<span class="pair">
+  <span class="lane danger">
+    <span class="label-micro">Surveillance class · quality</span>
+    <span class="lane-title">Primary CLABSI</span>
+    <span class="lane-sub">Counts in SIR numerator</span>
+    
+  </span>
+  <span class="lane warn">
+    <span class="label-micro">Bedside action · clinical</span>
+    <span class="lane-title">Draw a peripheral set</span>
+    <span class="lane-sub">No paired peripheral · ΔTTP unknown</span>
+    
+  </span>
+</span>
+
+</a>
+<a class="q-row" href="#case/contaminant-alvarez">
+  <span><span class="seq">5</span><span class="q-name">Sofia Alvarez</span>
+    <span class="q-sub">Surgical 2E</span></span>
+  <span><span class="org">S. epidermidis</span><span class="q-sub">21 Aug · MRN 00817644</span></span>
+  
+<span class="pair">
+  <span class="lane ok">
+    <span class="label-micro">Surveillance class · quality</span>
+    <span class="lane-title">Contaminant</span>
+    <span class="lane-sub">Suppressed · surveillance non-event</span>
+    
+  </span>
+  <span class="lane warn">
+    <span class="label-micro">Bedside action · clinical</span>
+    <span class="lane-title">Draw a peripheral set</span>
+    <span class="lane-sub">No paired peripheral · ΔTTP unknown</span>
+    
+  </span>
+</span>
+
+</a>
+</div>
+<div class="foot">
+  <div><p class="label-micro">Quality value</p><h3 class="display">Protect the SIR</h3>
+    <p class="muted">MBI-LCBI and secondary BSI are reportable in NHSN but do not belong in the CLABSI Standardized Infection Ratio. Aegis isolates them before they become an unfair penalty.</p></div>
+  <div><p class="label-micro">Clinical value</p><h3 class="display">Salvage the line</h3>
+    <p class="muted">Differential time to positivity is invisible to surveillance. The bedside lane uses it so a Broviac in neutropenia is not pulled on reflex — and a biofilm-positive PICC is not left in.</p></div>
+</div>
+</div>
+<div class="page" id="page-spec">
+<div class="aegis-shell">
+  <header class="aegis-header">
+    <a class="brand" href="#queue">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="brand-name">Aegis</span>
+        <span class="brand-sub">BSI adjudication</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <a class="" href="#queue">Queue</a>
+      <a class="current" href="#spec">Spec</a>
+    </nav>
+    <p class="window-meta">Synthetic review window<strong>18–24 Aug 2026</strong></p>
+  </header>
+</div>
+
+<p class="label-micro">Developer spec</p>
+<p class="edition">Streamlit edition · synthetic cases</p>
+<h1 class="display">Four surveillance layers. One bedside question.</h1>
+<p class="lede">The JSON below is the source of truth for expected outcomes. Every test case is synthetic: names, MRNs, units, cultures, and timestamps are invented. The live engine evaluates the same objects.</p>
+<div class="grid-2" style="margin-top:1.5rem"><div class="card"><p class="display" style="font-size:1.15rem">1.0 Integrity</p><p class="muted">Recognized pathogen from ≥1 bottle → LCBI 1. Common commensal from ≥2 specimens plus symptoms → LCBI 2/3. Otherwise contaminant.</p></div><div class="card"><p class="display" style="font-size:1.15rem">2.0 Source</p><p class="muted">Matching extravascular isolate inside the Secondary BSI Attribution Period, or blood as a required element of a site-specific infection → Secondary. Else Primary.</p></div><div class="card"><p class="display" style="font-size:1.15rem">3.0 Pathophysiology</p><p class="muted">MBI organism, no non-MBI co-isolates in the 7-day IWP, and neutropenia (ANC &lt;500 on ≥2 IWP days) or allogeneic HSCT pathway → MBI-LCBI, excluded from SIR.</p></div><div class="card"><p class="display" style="font-size:1.15rem">4.0 Device</p><p class="muted">Eligible central line in place &gt;2 consecutive calendar days after first inpatient access → Primary CLABSI. Else primary non-line LCBI.</p></div><div class="card"><p class="display" style="font-size:1.15rem">5.0 Bedside (parallel)</p><p class="muted">ΔTTP ≥120 min supports intraluminal biofilm (extract). ΔTTP &lt;120 supports salvage. Missing peripheral set is an actionable gap.</p></div></div>
+<h2 class="display" style="margin:2rem 0 0.5rem">Synthetic JSON test cases</h2>
+<p class="muted">Not real patients or PHI. Each fixture carries an expected object. The engine must match it.</p>
+<div class="stack" style="margin-top:1rem"><article class="card">
+              <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap">
+                <div><p class="label-micro">Synthetic case 1</p>
+                <h3 class="display">Gut translocation, not the line</h3>
+                <p class="muted">Four-day neutropenic nadir. E. coli in paired bottles. ΔTTP of 12 minutes.</p></div>
+                <span class="badge badge-ok">Pass</span>
+              </div>
+              <pre class="mono" style="max-height:24rem;margin-top:0.8rem">{
+  &quot;synthetic&quot;: true,
+  &quot;id&quot;: &quot;mbi-chen&quot;,
+  &quot;patient&quot;: {
+    &quot;id&quot;: &quot;p-chen&quot;,
+    &quot;mrn&quot;: &quot;00821456&quot;,
+    &quot;name&quot;: &quot;Maya Chen&quot;,
+    &quot;ageYears&quot;: 8,
+    &quot;sex&quot;: &quot;F&quot;,
+    &quot;unit&quot;: &quot;Peds Oncology 4B&quot;,
+    &quot;service&quot;: &quot;Pediatric hematology-oncology&quot;,
+    &quot;diagnosis&quot;: &quot;B-ALL, day 12 of induction&quot;
+  },
+  &quot;line&quot;: {
+    &quot;type&quot;: &quot;Tunneled Broviac (double lumen)&quot;,
+    &quot;placedAt&quot;: &quot;2026-07-08&quot;,
+    &quot;firstAccessedInpatientAt&quot;: &quot;2026-07-08&quot;,
+    &quot;firstAccessLocation&quot;: &quot;Peds Oncology 4B&quot;,
+    &quot;inPlace&quot;: true
+  },
+  &quot;bloodCultures&quot;: [
+    {
+      &quot;id&quot;: &quot;bc-chen-c&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-22T06:14:00-05:00&quot;,
+      &quot;source&quot;: &quot;central&quot;,
+      &quot;organism&quot;: &quot;Escherichia coli&quot;,
+      &quot;organismKey&quot;: &quot;escherichia-coli&quot;,
+      &quot;timeToPositivityHours&quot;: 11.2
+    },
+    {
+      &quot;id&quot;: &quot;bc-chen-p&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-22T06:16:00-05:00&quot;,
+      &quot;source&quot;: &quot;peripheral&quot;,
+      &quot;organism&quot;: &quot;Escherichia coli&quot;,
+      &quot;organismKey&quot;: &quot;escherichia-coli&quot;,
+      &quot;timeToPositivityHours&quot;: 11.4
+    }
+  ],
+  &quot;extraVascularCultures&quot;: [],
+  &quot;ancSeries&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-19T05:40:00-05:00&quot;,
+      &quot;anc&quot;: 120
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-20T05:35:00-05:00&quot;,
+      &quot;anc&quot;: 80
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-21T05:50:00-05:00&quot;,
+      &quot;anc&quot;: 40
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-22T05:42:00-05:00&quot;,
+      &quot;anc&quot;: 30
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-23T05:38:00-05:00&quot;,
+      &quot;anc&quot;: 90
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-24T05:44:00-05:00&quot;,
+      &quot;anc&quot;: 210
+    }
+  ],
+  &quot;symptoms&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-22T05:10:00-05:00&quot;,
+      &quot;type&quot;: &quot;fever&quot;,
+      &quot;value&quot;: &quot;38.4\u00b0C&quot;
+    }
+  ],
+  &quot;siteSpecificInfection&quot;: null,
+  &quot;expected&quot;: {
+    &quot;surveillanceLabel&quot;: &quot;MBI-LCBI&quot;,
+    &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+    &quot;mbiType&quot;: &quot;MBI-LCBI-1&quot;,
+    &quot;countsInSir&quot;: false,
+    &quot;nhsNReportable&quot;: true,
+    &quot;bedsideStatus&quot;: &quot;biofilm-not-supported&quot;,
+    &quot;deltaTtpMinutes&quot;: 12,
+    &quot;salvageEligible&quot;: true
+  }
+}</pre>
+            </article><article class="card">
+              <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap">
+                <div><p class="label-micro">Synthetic case 2</p>
+                <h3 class="display">True line biofilm</h3>
+                <p class="muted">PICC day 36. Paired S. epidermidis. Central bottle flagged 160 minutes first.</p></div>
+                <span class="badge badge-ok">Pass</span>
+              </div>
+              <pre class="mono" style="max-height:24rem;margin-top:0.8rem">{
+  &quot;synthetic&quot;: true,
+  &quot;id&quot;: &quot;clabsi-reyes&quot;,
+  &quot;patient&quot;: {
+    &quot;id&quot;: &quot;p-reyes&quot;,
+    &quot;mrn&quot;: &quot;00819302&quot;,
+    &quot;name&quot;: &quot;Jonah Reyes&quot;,
+    &quot;ageYears&quot;: 4,
+    &quot;sex&quot;: &quot;M&quot;,
+    &quot;unit&quot;: &quot;PICU 1&quot;,
+    &quot;service&quot;: &quot;Pediatric critical care&quot;,
+    &quot;diagnosis&quot;: &quot;Short-gut syndrome on home TPN&quot;
+  },
+  &quot;line&quot;: {
+    &quot;type&quot;: &quot;PICC (3 Fr, single lumen)&quot;,
+    &quot;placedAt&quot;: &quot;2026-07-16&quot;,
+    &quot;firstAccessedInpatientAt&quot;: &quot;2026-07-16&quot;,
+    &quot;firstAccessLocation&quot;: &quot;PICU 1&quot;,
+    &quot;inPlace&quot;: true
+  },
+  &quot;bloodCultures&quot;: [
+    {
+      &quot;id&quot;: &quot;bc-reyes-c&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-20T09:04:00-05:00&quot;,
+      &quot;source&quot;: &quot;central&quot;,
+      &quot;organism&quot;: &quot;Staphylococcus epidermidis&quot;,
+      &quot;organismKey&quot;: &quot;staphylococcus-epidermidis&quot;,
+      &quot;timeToPositivityHours&quot;: 8.2
+    },
+    {
+      &quot;id&quot;: &quot;bc-reyes-p&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-20T09:06:00-05:00&quot;,
+      &quot;source&quot;: &quot;peripheral&quot;,
+      &quot;organism&quot;: &quot;Staphylococcus epidermidis&quot;,
+      &quot;organismKey&quot;: &quot;staphylococcus-epidermidis&quot;,
+      &quot;timeToPositivityHours&quot;: 10.87
+    }
+  ],
+  &quot;extraVascularCultures&quot;: [],
+  &quot;ancSeries&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-18T06:00:00-05:00&quot;,
+      &quot;anc&quot;: 4100
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-20T06:10:00-05:00&quot;,
+      &quot;anc&quot;: 3200
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-22T06:05:00-05:00&quot;,
+      &quot;anc&quot;: 3600
+    }
+  ],
+  &quot;symptoms&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-20T08:40:00-05:00&quot;,
+      &quot;type&quot;: &quot;fever&quot;,
+      &quot;value&quot;: &quot;38.6\u00b0C&quot;
+    }
+  ],
+  &quot;siteSpecificInfection&quot;: null,
+  &quot;expected&quot;: {
+    &quot;surveillanceLabel&quot;: &quot;Primary CLABSI&quot;,
+    &quot;lcbiType&quot;: &quot;LCBI-2&quot;,
+    &quot;mbiType&quot;: null,
+    &quot;countsInSir&quot;: true,
+    &quot;nhsNReportable&quot;: true,
+    &quot;bedsideStatus&quot;: &quot;biofilm-supported&quot;,
+    &quot;deltaTtpMinutes&quot;: 160,
+    &quot;salvageEligible&quot;: false
+  }
+}</pre>
+            </article><article class="card">
+              <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap">
+                <div><p class="label-micro">Synthetic case 3</p>
+                <h3 class="display">Pulmonary spillover</h3>
+                <p class="muted">CF flare. Sputum and blood grow the same Pseudomonas inside the SBAP.</p></div>
+                <span class="badge badge-ok">Pass</span>
+              </div>
+              <pre class="mono" style="max-height:24rem;margin-top:0.8rem">{
+  &quot;synthetic&quot;: true,
+  &quot;id&quot;: &quot;secondary-haddad&quot;,
+  &quot;patient&quot;: {
+    &quot;id&quot;: &quot;p-haddad&quot;,
+    &quot;mrn&quot;: &quot;00798811&quot;,
+    &quot;name&quot;: &quot;Amira Haddad&quot;,
+    &quot;ageYears&quot;: 14,
+    &quot;sex&quot;: &quot;F&quot;,
+    &quot;unit&quot;: &quot;Pulmonary 3W&quot;,
+    &quot;service&quot;: &quot;Pediatric pulmonology&quot;,
+    &quot;diagnosis&quot;: &quot;Cystic fibrosis, acute pulmonary exacerbation&quot;
+  },
+  &quot;line&quot;: {
+    &quot;type&quot;: &quot;Port-a-cath&quot;,
+    &quot;placedAt&quot;: &quot;2026-04-22&quot;,
+    &quot;firstAccessedInpatientAt&quot;: &quot;2026-08-16&quot;,
+    &quot;firstAccessLocation&quot;: &quot;Pulmonary 3W&quot;,
+    &quot;inPlace&quot;: true
+  },
+  &quot;bloodCultures&quot;: [
+    {
+      &quot;id&quot;: &quot;bc-haddad-c&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-20T14:22:00-05:00&quot;,
+      &quot;source&quot;: &quot;central&quot;,
+      &quot;organism&quot;: &quot;Pseudomonas aeruginosa&quot;,
+      &quot;organismKey&quot;: &quot;pseudomonas-aeruginosa&quot;,
+      &quot;timeToPositivityHours&quot;: 9.1
+    },
+    {
+      &quot;id&quot;: &quot;bc-haddad-p&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-20T14:24:00-05:00&quot;,
+      &quot;source&quot;: &quot;peripheral&quot;,
+      &quot;organism&quot;: &quot;Pseudomonas aeruginosa&quot;,
+      &quot;organismKey&quot;: &quot;pseudomonas-aeruginosa&quot;,
+      &quot;timeToPositivityHours&quot;: 9.4
+    }
+  ],
+  &quot;extraVascularCultures&quot;: [
+    {
+      &quot;id&quot;: &quot;ev-haddad-sputum&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-18T11:05:00-05:00&quot;,
+      &quot;site&quot;: &quot;sputum&quot;,
+      &quot;siteLabel&quot;: &quot;Expectorated sputum&quot;,
+      &quot;organism&quot;: &quot;Pseudomonas aeruginosa&quot;,
+      &quot;organismKey&quot;: &quot;pseudomonas-aeruginosa&quot;,
+      &quot;nhsNSite&quot;: &quot;PNEU&quot;
+    }
+  ],
+  &quot;ancSeries&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-18T06:20:00-05:00&quot;,
+      &quot;anc&quot;: 7800
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-20T06:15:00-05:00&quot;,
+      &quot;anc&quot;: 9100
+    }
+  ],
+  &quot;symptoms&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-20T13:50:00-05:00&quot;,
+      &quot;type&quot;: &quot;fever&quot;,
+      &quot;value&quot;: &quot;38.2\u00b0C&quot;
+    }
+  ],
+  &quot;siteSpecificInfection&quot;: {
+    &quot;site&quot;: &quot;PNEU&quot;,
+    &quot;criteriaMet&quot;: true,
+    &quot;note&quot;: &quot;Acute CF exacerbation with new infiltrate on 19 Aug CT; sputum isolate required to close PNEU, blood is a matching secondary.&quot;
+  },
+  &quot;expected&quot;: {
+    &quot;surveillanceLabel&quot;: &quot;Secondary BSI&quot;,
+    &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+    &quot;mbiType&quot;: null,
+    &quot;countsInSir&quot;: false,
+    &quot;nhsNReportable&quot;: true,
+    &quot;bedsideStatus&quot;: &quot;biofilm-not-supported&quot;,
+    &quot;deltaTtpMinutes&quot;: 18,
+    &quot;salvageEligible&quot;: true
+  }
+}</pre>
+            </article><article class="card">
+              <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap">
+                <div><p class="label-micro">Synthetic case 4</p>
+                <h3 class="display">Surveillance complete, bedside blocked</h3>
+                <p class="muted">S. aureus from the Hickman only. No peripheral set. ΔTTP unknown.</p></div>
+                <span class="badge badge-ok">Pass</span>
+              </div>
+              <pre class="mono" style="max-height:24rem;margin-top:0.8rem">{
+  &quot;synthetic&quot;: true,
+  &quot;id&quot;: &quot;gap-park&quot;,
+  &quot;patient&quot;: {
+    &quot;id&quot;: &quot;p-park&quot;,
+    &quot;mrn&quot;: &quot;00825019&quot;,
+    &quot;name&quot;: &quot;Leo Park&quot;,
+    &quot;ageYears&quot;: 6,
+    &quot;sex&quot;: &quot;M&quot;,
+    &quot;unit&quot;: &quot;Hem/Onc 4A&quot;,
+    &quot;service&quot;: &quot;Pediatric oncology&quot;,
+    &quot;diagnosis&quot;: &quot;Relapsed neuroblastoma&quot;
+  },
+  &quot;line&quot;: {
+    &quot;type&quot;: &quot;Hickman (double lumen)&quot;,
+    &quot;placedAt&quot;: &quot;2026-08-02&quot;,
+    &quot;firstAccessedInpatientAt&quot;: &quot;2026-08-02&quot;,
+    &quot;firstAccessLocation&quot;: &quot;Hem/Onc 4A&quot;,
+    &quot;inPlace&quot;: true
+  },
+  &quot;bloodCultures&quot;: [
+    {
+      &quot;id&quot;: &quot;bc-park-c&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-23T16:48:00-05:00&quot;,
+      &quot;source&quot;: &quot;central&quot;,
+      &quot;organism&quot;: &quot;Staphylococcus aureus&quot;,
+      &quot;organismKey&quot;: &quot;staphylococcus-aureus&quot;,
+      &quot;timeToPositivityHours&quot;: 7.4
+    }
+  ],
+  &quot;extraVascularCultures&quot;: [],
+  &quot;ancSeries&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-21T06:00:00-05:00&quot;,
+      &quot;anc&quot;: 2100
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-23T06:12:00-05:00&quot;,
+      &quot;anc&quot;: 1800
+    }
+  ],
+  &quot;symptoms&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-23T15:20:00-05:00&quot;,
+      &quot;type&quot;: &quot;fever&quot;,
+      &quot;value&quot;: &quot;39.1\u00b0C&quot;
+    }
+  ],
+  &quot;siteSpecificInfection&quot;: null,
+  &quot;expected&quot;: {
+    &quot;surveillanceLabel&quot;: &quot;Primary CLABSI&quot;,
+    &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+    &quot;mbiType&quot;: null,
+    &quot;countsInSir&quot;: true,
+    &quot;nhsNReportable&quot;: true,
+    &quot;bedsideStatus&quot;: &quot;missing-data&quot;,
+    &quot;deltaTtpMinutes&quot;: null,
+    &quot;salvageEligible&quot;: false
+  }
+}</pre>
+            </article><article class="card">
+              <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap">
+                <div><p class="label-micro">Synthetic case 5</p>
+                <h3 class="display">One bottle, no symptoms</h3>
+                <p class="muted">Single S. epidermidis from the Broviac. Afebrile. Nothing else grows.</p></div>
+                <span class="badge badge-ok">Pass</span>
+              </div>
+              <pre class="mono" style="max-height:24rem;margin-top:0.8rem">{
+  &quot;synthetic&quot;: true,
+  &quot;id&quot;: &quot;contaminant-alvarez&quot;,
+  &quot;patient&quot;: {
+    &quot;id&quot;: &quot;p-alvarez&quot;,
+    &quot;mrn&quot;: &quot;00817644&quot;,
+    &quot;name&quot;: &quot;Sofia Alvarez&quot;,
+    &quot;ageYears&quot;: 11,
+    &quot;sex&quot;: &quot;F&quot;,
+    &quot;unit&quot;: &quot;Surgical 2E&quot;,
+    &quot;service&quot;: &quot;Pediatric surgery&quot;,
+    &quot;diagnosis&quot;: &quot;Postoperative day 6, bowel resection&quot;
+  },
+  &quot;line&quot;: {
+    &quot;type&quot;: &quot;Tunneled Broviac&quot;,
+    &quot;placedAt&quot;: &quot;2026-08-10&quot;,
+    &quot;firstAccessedInpatientAt&quot;: &quot;2026-08-10&quot;,
+    &quot;firstAccessLocation&quot;: &quot;OR / Surgical 2E&quot;,
+    &quot;inPlace&quot;: true
+  },
+  &quot;bloodCultures&quot;: [
+    {
+      &quot;id&quot;: &quot;bc-alvarez-c&quot;,
+      &quot;drawnAt&quot;: &quot;2026-08-21T10:12:00-05:00&quot;,
+      &quot;source&quot;: &quot;central&quot;,
+      &quot;organism&quot;: &quot;Staphylococcus epidermidis&quot;,
+      &quot;organismKey&quot;: &quot;staphylococcus-epidermidis&quot;,
+      &quot;timeToPositivityHours&quot;: 18.6
+    }
+  ],
+  &quot;extraVascularCultures&quot;: [],
+  &quot;ancSeries&quot;: [
+    {
+      &quot;at&quot;: &quot;2026-08-20T06:00:00-05:00&quot;,
+      &quot;anc&quot;: 5400
+    },
+    {
+      &quot;at&quot;: &quot;2026-08-22T06:00:00-05:00&quot;,
+      &quot;anc&quot;: 6100
+    }
+  ],
+  &quot;symptoms&quot;: [],
+  &quot;siteSpecificInfection&quot;: null,
+  &quot;expected&quot;: {
+    &quot;surveillanceLabel&quot;: &quot;Contaminant&quot;,
+    &quot;lcbiType&quot;: null,
+    &quot;mbiType&quot;: null,
+    &quot;countsInSir&quot;: false,
+    &quot;nhsNReportable&quot;: false,
+    &quot;bedsideStatus&quot;: &quot;missing-data&quot;,
+    &quot;deltaTtpMinutes&quot;: null,
+    &quot;salvageEligible&quot;: false
+  }
+}</pre>
+            </article></div>
+</div>
+<div class="page" id="page-case-mbi-chen">
+<div class="aegis-shell">
+  <header class="aegis-header">
+    <a class="brand" href="#queue">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="brand-name">Aegis</span>
+        <span class="brand-sub">BSI adjudication</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <a class="current" href="#queue">Queue</a>
+      <a class="" href="#spec">Spec</a>
+    </nav>
+    <p class="window-meta">Synthetic review window<strong>18–24 Aug 2026</strong></p>
+  </header>
+</div>
+
+<a class="back" href="#queue">← Queue</a>
+<p class="label-micro">Synthetic case · Peds Oncology 4B · MRN 00821456</p>
+<h1 class="display">Maya Chen</h1>
+<p class="muted">8F · B-ALL, day 12 of induction</p>
+<p class="lede">Without MBI logic this event hits the CLABSI SIR. The child is profoundly neutropenic after induction — the organism came through mucosa, not the Broviac. Counting it punishes oncology care the hospital cannot prevent, and pulling the line would strand her without access at the worst possible moment.</p>
+<div style="margin-top:1.25rem">
+<div class="pair pair-lg">
+  <div class="lane ok">
+    <div class="label-micro">Surveillance class · quality</div>
+    <div class="lane-title">MBI-LCBI</div>
+    <div class="lane-sub">Reported to NHSN · excluded from SIR</div>
+    <div style="margin-top:0.7rem"><span class="badge badge-ok">LCBI-1</span> <span class="badge badge-ok">MBI-LCBI-1</span></div>
+  </div>
+  <div class="lane ok">
+    <div class="label-micro">Bedside action · clinical</div>
+    <div class="lane-title">Salvage the line</div>
+    <div class="lane-sub">ΔTTP 12 min</div>
+    <p class="lane-sub" style="margin-top:0.7rem">Biofilm pattern not supported. Infection is likely systemic or translocational — the line is eligible for salvage with targeted antibiotics.</p>
+  </div>
+</div>
+</div>
+<div class="stack" style="margin-top:1.5rem">
+  <section class="card">
+    <div style="display:flex;justify-content:space-between"><p class="label-micro">Infection window period</p>
+      <p class="muted" style="margin:0">7 days · DOE 2026-08-22</p></div>
+    <div class="iwp"><div class="iwp-day"><div class="wd">WED</div><div class="dn">19</div><div class="anc">120</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">THU</div><div class="dn">20</div><div class="anc">80</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">FRI</div><div class="dn">21</div><div class="anc">40</div><div class="dots"></div></div><div class="iwp-day doe"><div class="wd">SAT</div><div class="dn">22</div><div class="anc">30</div><div class="dots"><span class="dot"></span><span class="dot fe"></span></div></div><div class="iwp-day"><div class="wd">SUN</div><div class="dn">23</div><div class="anc">90</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">MON</div><div class="dn">24</div><div class="anc">210</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">TUE</div><div class="dn">25</div><div class="anc">—</div><div class="dots"></div></div></div>
+    <p class="muted" style="margin-top:0.7rem">Figures are ANC (cells/mm³). Marks: blood, extravascular culture, fever.</p>
+  </section>
+  <section class="card">
+    <p class="label-micro">Surveillance path</p>
+    <div class="phases"><div class="phase"><p class="label-micro">1.0 Integrity check</p><p class="display" style="font-size:1rem;margin-top:0.4rem">True BSI · LCBI-1</p><p>LCBI 1: a recognized bacterial or fungal pathogen isolated from ≥1 blood specimen.</p></div><div class="phase"><p class="label-micro">2.0 Source origin</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Primary BSI</p><p>No matching qualifying extravascular infection under NHSN rules inside the SBAP.</p></div><div class="phase"><p class="label-micro">3.0 Pathophysiology</p><p class="display" style="font-size:1rem;margin-top:0.4rem">MBI-LCBI-1</p><p>MBI-LCBI: organism is on the NHSN MBI master list, no non-MBI co-isolates in the 7-day IWP, and neutropenia (ANC &lt;500 on ≥2 days) or allogeneic HSCT pathway is met.</p></div><div class="phase skipped"><p class="label-micro">4.0 Device eligibility</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Not reached</p><p>Line would be calendar day 46 — MBI exclusion applies before CLABSI assignment.</p></div></div>
+  </section>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:0.75rem;align-items:start">
+      <div><p class="label-micro">Parallel bedside lane · 5.0</p><h2 class="display">Should we pull this line?</h2></div>
+      <span class="badge badge-ok">Salvage the line</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div>
+        <div class="muted" style="display:flex;justify-content:space-between;font-size:0.75rem"><span>Simultaneous</span><span>120 min</span><span>Biofilm</span></div>
+        <div class="gauge-track"><div class="gauge-mid"></div>
+          <div class="gauge-knob" style="left:5.0%;background:var(--ok)"></div>
+        </div>
+        <div class="delta">12<span style="font-size:1rem;color:var(--ink-muted);margin-left:0.3rem">min</span></div>
+        <ul class="facts"><li><span class="k">Central TTP</span><span class="" style="text-align:right;max-width:60%">11.20 h</span></li><li><span class="k">Peripheral TTP</span><span class="" style="text-align:right;max-width:60%">11.40 h</span></li><li><span class="k">ΔTTP</span><span class="ok" style="text-align:right;max-width:60%">12 min (threshold ≥120)</span></li></ul>
+      </div>
+      <div class="lane ok" style="border-radius:12px">
+        <p class="label-micro">Clinical recommendation</p>
+        <p class="lane-title" style="font-size:1.15rem">Biofilm pattern not supported</p>
+        <p class="lane-sub" style="margin-top:0.5rem">Biofilm pattern not supported. Infection is likely systemic or translocational — the line is eligible for salvage with targeted antibiotics.</p>
+      </div>
+    </div>
+  </section>
+  <div class="grid-2">
+    <section class="card">
+      <p class="label-micro">Card 1</p>
+      <h3 class="display">MBI profile</h3>
+      <div class="verdict-bar">MBI-LCBI-1</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">MBI master list</span><span class="ok" style="text-align:right;max-width:60%">Match</span></li><li><span class="k">Non-MBI co-isolates in IWP</span><span class="ok" style="text-align:right;max-width:60%">None</span></li><li><span class="k">Neutropenia pathway</span><span class="ok" style="text-align:right;max-width:60%">6 IWP days with ANC &lt;500 (need ≥2)</span></li><li><span class="k">Allogeneic HSCT pathway</span><span class="" style="text-align:right;max-width:60%">No allogeneic HSCT</span></li></ul></div>
+      <p class="muted" style="margin:0.8rem 0 0;font-size:0.75rem">ANC trajectory</p>
+      <div class="anc-bars"><span class="anc-col"><span class="anc-bar" style="height:20%"></span><span class="anc-lab">19 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:13%"></span><span class="anc-lab">20 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:7%"></span><span class="anc-lab">21 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:6%"></span><span class="anc-lab">22 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:15%"></span><span class="anc-lab">23 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:35%"></span><span class="anc-lab">24 Aug</span></span></div>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 2</p>
+      <h3 class="display">Alternative source</h3>
+      <div class="verdict-bar">Primary BSI</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">SBAP</span><span class="" style="text-align:right;max-width:60%">2026-08-19 → 2026-09-04</span></li><li><span class="k">Matching extravascular cultures</span><span class="" style="text-align:right;max-width:60%">None</span></li><li><span class="k">Site-specific infection</span><span class="" style="text-align:right;max-width:60%">Not verified</span></li></ul></div>
+      <div style="margin-top:0.8rem"><p class="muted">No extravascular isolates on the record.</p></div>
+    </section>
+    <section class="card skipped">
+      <p class="label-micro">Card 3</p>
+      <h3 class="display">Line context</h3>
+      <div class="verdict-bar">Not reached</div>
+      <div style="margin-top:0.9rem"><dl class="facts">
+          <li><span class="k">Device</span><span>Tunneled Broviac (double lumen)</span></li>
+          <li><span class="k">Calendar day on DOE</span><span>Day 46</span></li>
+          <li><span class="k">Placed</span><span>8 July 2026</span></li>
+          <li><span class="k">First inpatient access</span><span>Peds Oncology 4B</span></li>
+        </dl></div>
+      <p class="muted" style="margin-top:0.8rem">Line would be calendar day 46 — MBI exclusion applies before CLABSI assignment.</p>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 4</p>
+      <h3 class="display">Gaps</h3>
+      <div class="verdict-bar">No actionable gaps</div>
+      <p class="muted">Paired cultures, symptoms, and labs are sufficient for both surveillance and bedside lanes.</p>
+    </section>
+  </div>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <p class="label-micro">Synthetic fixture</p>
+        <h2 class="display">Gut translocation, not the line</h2>
+        <p class="muted">Four-day neutropenic nadir. E. coli in paired bottles. ΔTTP of 12 minutes. Invented for engine tests — not a real patient.</p>
+      </div>
+      <span class="badge badge-ok">Engine matches expected JSON</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div><p class="label-micro">Expected</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;MBI-LCBI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+  &quot;mbiType&quot;: &quot;MBI-LCBI-1&quot;,
+  &quot;countsInSir&quot;: false,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;biofilm-not-supported&quot;,
+  &quot;deltaTtpMinutes&quot;: 12,
+  &quot;salvageEligible&quot;: true
+}</pre></div>
+      <div><p class="label-micro">Computed</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;MBI-LCBI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+  &quot;mbiType&quot;: &quot;MBI-LCBI-1&quot;,
+  &quot;countsInSir&quot;: false,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;biofilm-not-supported&quot;,
+  &quot;deltaTtpMinutes&quot;: 12,
+  &quot;salvageEligible&quot;: true
+}</pre></div>
+    </div>
+  </section>
+</div>
+</div>
+<div class="page" id="page-case-clabsi-reyes">
+<div class="aegis-shell">
+  <header class="aegis-header">
+    <a class="brand" href="#queue">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="brand-name">Aegis</span>
+        <span class="brand-sub">BSI adjudication</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <a class="current" href="#queue">Queue</a>
+      <a class="" href="#spec">Spec</a>
+    </nav>
+    <p class="window-meta">Synthetic review window<strong>18–24 Aug 2026</strong></p>
+  </header>
+</div>
+
+<a class="back" href="#queue">← Queue</a>
+<p class="label-micro">Synthetic case · PICU 1 · MRN 00819302</p>
+<h1 class="display">Jonah Reyes</h1>
+<p class="muted">4M · Short-gut syndrome on home TPN</p>
+<p class="lede">This is the event quality programs exist to catch. A skin commensal in two specimens, a long-dwell PICC, and a ΔTTP well above two hours — the line is the source. The workbench does not soften it. It tells the team to pull.</p>
+<div style="margin-top:1.25rem">
+<div class="pair pair-lg">
+  <div class="lane danger">
+    <div class="label-micro">Surveillance class · quality</div>
+    <div class="lane-title">Primary CLABSI</div>
+    <div class="lane-sub">Counts in SIR numerator</div>
+    <div style="margin-top:0.7rem"><span class="badge badge-danger">LCBI-2</span></div>
+  </div>
+  <div class="lane danger">
+    <div class="label-micro">Bedside action · clinical</div>
+    <div class="lane-title">Extract the line</div>
+    <div class="lane-sub">ΔTTP 160 min</div>
+    <p class="lane-sub" style="margin-top:0.7rem">Intraluminal biofilm supported. Catheter salvage is unlikely — prioritize line extraction.</p>
+  </div>
+</div>
+</div>
+<div class="stack" style="margin-top:1.5rem">
+  <section class="card">
+    <div style="display:flex;justify-content:space-between"><p class="label-micro">Infection window period</p>
+      <p class="muted" style="margin:0">7 days · DOE 2026-08-20</p></div>
+    <div class="iwp"><div class="iwp-day"><div class="wd">MON</div><div class="dn">17</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">TUE</div><div class="dn">18</div><div class="anc">4100</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">WED</div><div class="dn">19</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day doe"><div class="wd">THU</div><div class="dn">20</div><div class="anc">3200</div><div class="dots"><span class="dot"></span><span class="dot fe"></span></div></div><div class="iwp-day"><div class="wd">FRI</div><div class="dn">21</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">SAT</div><div class="dn">22</div><div class="anc">3600</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">SUN</div><div class="dn">23</div><div class="anc">—</div><div class="dots"></div></div></div>
+    <p class="muted" style="margin-top:0.7rem">Figures are ANC (cells/mm³). Marks: blood, extravascular culture, fever.</p>
+  </section>
+  <section class="card">
+    <p class="label-micro">Surveillance path</p>
+    <div class="phases"><div class="phase"><p class="label-micro">1.0 Integrity check</p><p class="display" style="font-size:1rem;margin-top:0.4rem">True BSI · LCBI-2</p><p>LCBI 2: common commensal from ≥2 specimens on the same or consecutive days plus fever &gt;38.0°C, chills, or hypotension.</p></div><div class="phase"><p class="label-micro">2.0 Source origin</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Primary BSI</p><p>No matching qualifying extravascular infection under NHSN rules inside the SBAP.</p></div><div class="phase"><p class="label-micro">3.0 Pathophysiology</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Standard primary BSI</p><p>Host does not meet neutropenia/HSCT criteria, or the isolate is not an MBI organism.</p></div><div class="phase"><p class="label-micro">4.0 Device eligibility</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Primary CLABSI</p><p>Eligible central line first accessed in an inpatient location and in place &gt;2 consecutive calendar days on the date of event.</p></div></div>
+  </section>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:0.75rem;align-items:start">
+      <div><p class="label-micro">Parallel bedside lane · 5.0</p><h2 class="display">Should we pull this line?</h2></div>
+      <span class="badge badge-danger">Extract the line</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div>
+        <div class="muted" style="display:flex;justify-content:space-between;font-size:0.75rem"><span>Simultaneous</span><span>120 min</span><span>Biofilm</span></div>
+        <div class="gauge-track"><div class="gauge-mid"></div>
+          <div class="gauge-knob" style="left:66.66666666666666%;background:var(--danger)"></div>
+        </div>
+        <div class="delta">160<span style="font-size:1rem;color:var(--ink-muted);margin-left:0.3rem">min</span></div>
+        <ul class="facts"><li><span class="k">Central TTP</span><span class="" style="text-align:right;max-width:60%">8.20 h</span></li><li><span class="k">Peripheral TTP</span><span class="" style="text-align:right;max-width:60%">10.87 h</span></li><li><span class="k">ΔTTP</span><span class="danger" style="text-align:right;max-width:60%">160 min (threshold ≥120)</span></li></ul>
+      </div>
+      <div class="lane danger" style="border-radius:12px">
+        <p class="label-micro">Clinical recommendation</p>
+        <p class="lane-title" style="font-size:1.15rem">Intraluminal biofilm supported</p>
+        <p class="lane-sub" style="margin-top:0.5rem">Intraluminal biofilm supported. Catheter salvage is unlikely — prioritize line extraction.</p>
+      </div>
+    </div>
+  </section>
+  <div class="grid-2">
+    <section class="card">
+      <p class="label-micro">Card 1</p>
+      <h3 class="display">MBI profile</h3>
+      <div class="verdict-bar">Standard primary BSI</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">MBI master list</span><span class="" style="text-align:right;max-width:60%">Not an MBI organism</span></li><li><span class="k">Non-MBI co-isolates in IWP</span><span class="warn" style="text-align:right;max-width:60%">Staphylococcus epidermidis</span></li><li><span class="k">Neutropenia pathway</span><span class="" style="text-align:right;max-width:60%">0 IWP days with ANC &lt;500 (need ≥2)</span></li><li><span class="k">Allogeneic HSCT pathway</span><span class="" style="text-align:right;max-width:60%">No allogeneic HSCT</span></li></ul></div>
+      <p class="muted" style="margin:0.8rem 0 0;font-size:0.75rem">ANC trajectory</p>
+      <div class="anc-bars"><span class="anc-col"><span class="anc-bar" style="height:100%"></span><span class="anc-lab">18 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:78%"></span><span class="anc-lab">20 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:88%"></span><span class="anc-lab">22 Aug</span></span></div>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 2</p>
+      <h3 class="display">Alternative source</h3>
+      <div class="verdict-bar">Primary BSI</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">SBAP</span><span class="" style="text-align:right;max-width:60%">2026-08-17 → 2026-09-02</span></li><li><span class="k">Matching extravascular cultures</span><span class="" style="text-align:right;max-width:60%">None</span></li><li><span class="k">Site-specific infection</span><span class="" style="text-align:right;max-width:60%">Not verified</span></li></ul></div>
+      <div style="margin-top:0.8rem"><p class="muted">No extravascular isolates on the record.</p></div>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 3</p>
+      <h3 class="display">Line context</h3>
+      <div class="verdict-bar">Primary CLABSI</div>
+      <div style="margin-top:0.9rem"><dl class="facts">
+          <li><span class="k">Device</span><span>PICC (3 Fr, single lumen)</span></li>
+          <li><span class="k">Calendar day on DOE</span><span>Day 36</span></li>
+          <li><span class="k">Placed</span><span>16 July 2026</span></li>
+          <li><span class="k">First inpatient access</span><span>PICU 1</span></li>
+        </dl></div>
+      <p class="muted" style="margin-top:0.8rem">Eligible central line first accessed in an inpatient location and in place &gt;2 consecutive calendar days on the date of event.</p>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 4</p>
+      <h3 class="display">Gaps</h3>
+      <div class="verdict-bar">No actionable gaps</div>
+      <p class="muted">Paired cultures, symptoms, and labs are sufficient for both surveillance and bedside lanes.</p>
+    </section>
+  </div>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <p class="label-micro">Synthetic fixture</p>
+        <h2 class="display">True line biofilm</h2>
+        <p class="muted">PICC day 36. Paired S. epidermidis. Central bottle flagged 160 minutes first. Invented for engine tests — not a real patient.</p>
+      </div>
+      <span class="badge badge-ok">Engine matches expected JSON</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div><p class="label-micro">Expected</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Primary CLABSI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-2&quot;,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: true,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;biofilm-supported&quot;,
+  &quot;deltaTtpMinutes&quot;: 160,
+  &quot;salvageEligible&quot;: false
+}</pre></div>
+      <div><p class="label-micro">Computed</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Primary CLABSI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-2&quot;,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: true,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;biofilm-supported&quot;,
+  &quot;deltaTtpMinutes&quot;: 160,
+  &quot;salvageEligible&quot;: false
+}</pre></div>
+    </div>
+  </section>
+</div>
+</div>
+<div class="page" id="page-case-secondary-haddad">
+<div class="aegis-shell">
+  <header class="aegis-header">
+    <a class="brand" href="#queue">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="brand-name">Aegis</span>
+        <span class="brand-sub">BSI adjudication</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <a class="current" href="#queue">Queue</a>
+      <a class="" href="#spec">Spec</a>
+    </nav>
+    <p class="window-meta">Synthetic review window<strong>18–24 Aug 2026</strong></p>
+  </header>
+</div>
+
+<a class="back" href="#queue">← Queue</a>
+<p class="label-micro">Synthetic case · Pulmonary 3W · MRN 00798811</p>
+<h1 class="display">Amira Haddad</h1>
+<p class="muted">14F · Cystic fibrosis, acute pulmonary exacerbation</p>
+<p class="lede">A port in a cystic fibrosis patient is a lifeline. The lung is the source — sputum two days earlier, new infiltrate, identical organism in blood. Calling this a CLABSI inflates the SIR and tempts the team to explant a port they should treat through.</p>
+<div style="margin-top:1.25rem">
+<div class="pair pair-lg">
+  <div class="lane ok">
+    <div class="label-micro">Surveillance class · quality</div>
+    <div class="lane-title">Secondary BSI</div>
+    <div class="lane-sub">Attributed off the line · not a CLABSI</div>
+    <div style="margin-top:0.7rem"><span class="badge badge-ok">LCBI-1</span></div>
+  </div>
+  <div class="lane ok">
+    <div class="label-micro">Bedside action · clinical</div>
+    <div class="lane-title">Salvage the line</div>
+    <div class="lane-sub">ΔTTP 18 min</div>
+    <p class="lane-sub" style="margin-top:0.7rem">Biofilm pattern not supported. Infection is likely systemic or translocational — the line is eligible for salvage with targeted antibiotics.</p>
+  </div>
+</div>
+</div>
+<div class="stack" style="margin-top:1.5rem">
+  <section class="card">
+    <div style="display:flex;justify-content:space-between"><p class="label-micro">Infection window period</p>
+      <p class="muted" style="margin:0">7 days · DOE 2026-08-20</p></div>
+    <div class="iwp"><div class="iwp-day"><div class="wd">MON</div><div class="dn">17</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">TUE</div><div class="dn">18</div><div class="anc">7800</div><div class="dots"><span class="dot ev"></span></div></div><div class="iwp-day"><div class="wd">WED</div><div class="dn">19</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day doe"><div class="wd">THU</div><div class="dn">20</div><div class="anc">9100</div><div class="dots"><span class="dot"></span><span class="dot fe"></span></div></div><div class="iwp-day"><div class="wd">FRI</div><div class="dn">21</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">SAT</div><div class="dn">22</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">SUN</div><div class="dn">23</div><div class="anc">—</div><div class="dots"></div></div></div>
+    <p class="muted" style="margin-top:0.7rem">Figures are ANC (cells/mm³). Marks: blood, extravascular culture, fever.</p>
+  </section>
+  <section class="card">
+    <p class="label-micro">Surveillance path</p>
+    <div class="phases"><div class="phase"><p class="label-micro">1.0 Integrity check</p><p class="display" style="font-size:1rem;margin-top:0.4rem">True BSI · LCBI-1</p><p>LCBI 1: a recognized bacterial or fungal pathogen isolated from ≥1 blood specimen.</p></div><div class="phase"><p class="label-micro">2.0 Source origin</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Secondary BSI · PNEU</p><p>Blood isolate genus/species matches an extravascular culture inside the Secondary BSI Attribution Period, or the blood culture is a required element of a site-specific infection.</p></div><div class="phase skipped"><p class="label-micro">3.0 Pathophysiology</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Not reached</p><p>Secondary BSI already attributed — MBI filter is not applied.</p></div><div class="phase skipped"><p class="label-micro">4.0 Device eligibility</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Not reached</p><p>Secondary BSI is attributed to the localized infection, not the line.</p></div></div>
+  </section>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:0.75rem;align-items:start">
+      <div><p class="label-micro">Parallel bedside lane · 5.0</p><h2 class="display">Should we pull this line?</h2></div>
+      <span class="badge badge-ok">Salvage the line</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div>
+        <div class="muted" style="display:flex;justify-content:space-between;font-size:0.75rem"><span>Simultaneous</span><span>120 min</span><span>Biofilm</span></div>
+        <div class="gauge-track"><div class="gauge-mid"></div>
+          <div class="gauge-knob" style="left:7.5%;background:var(--ok)"></div>
+        </div>
+        <div class="delta">18<span style="font-size:1rem;color:var(--ink-muted);margin-left:0.3rem">min</span></div>
+        <ul class="facts"><li><span class="k">Central TTP</span><span class="" style="text-align:right;max-width:60%">9.10 h</span></li><li><span class="k">Peripheral TTP</span><span class="" style="text-align:right;max-width:60%">9.40 h</span></li><li><span class="k">ΔTTP</span><span class="ok" style="text-align:right;max-width:60%">18 min (threshold ≥120)</span></li></ul>
+      </div>
+      <div class="lane ok" style="border-radius:12px">
+        <p class="label-micro">Clinical recommendation</p>
+        <p class="lane-title" style="font-size:1.15rem">Biofilm pattern not supported</p>
+        <p class="lane-sub" style="margin-top:0.5rem">Biofilm pattern not supported. Infection is likely systemic or translocational — the line is eligible for salvage with targeted antibiotics.</p>
+      </div>
+    </div>
+  </section>
+  <div class="grid-2">
+    <section class="card skipped">
+      <p class="label-micro">Card 1</p>
+      <h3 class="display">MBI profile</h3>
+      <div class="verdict-bar">Not reached</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">Why skipped</span><span class="" style="text-align:right;max-width:60%">Secondary BSI already attributed — MBI filter is not applied.</span></li></ul></div>
+      <p class="muted" style="margin:0.8rem 0 0;font-size:0.75rem">ANC trajectory</p>
+      <div class="anc-bars"><span class="anc-col"><span class="anc-bar" style="height:86%"></span><span class="anc-lab">18 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:100%"></span><span class="anc-lab">20 Aug</span></span></div>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 2</p>
+      <h3 class="display">Alternative source</h3>
+      <div class="verdict-bar">Secondary BSI · PNEU</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">SBAP</span><span class="" style="text-align:right;max-width:60%">2026-08-17 → 2026-09-02</span></li><li><span class="k">Matching extravascular cultures</span><span class="ok" style="text-align:right;max-width:60%">Pseudomonas aeruginosa · Expectorated sputum</span></li><li><span class="k">Site-specific infection</span><span class="ok" style="text-align:right;max-width:60%">PNEU — Acute CF exacerbation with new infiltrate on 19 Aug CT; sputum isolate required to close PNEU, blood is a matching secondary.</span></li></ul></div>
+      <div style="margin-top:0.8rem"><div class="gap-item"><strong>Pseudomonas aeruginosa · Expectorated sputum</strong><div class="muted">18 Aug 11:05 · PNEU</div></div><p class="muted">CT chest 19 Aug 2026: new right-lower-lobe infiltrate versus prior.</p></div>
+    </section>
+    <section class="card skipped">
+      <p class="label-micro">Card 3</p>
+      <h3 class="display">Line context</h3>
+      <div class="verdict-bar">Not reached</div>
+      <div style="margin-top:0.9rem"><dl class="facts">
+          <li><span class="k">Device</span><span>Port-a-cath</span></li>
+          <li><span class="k">Calendar day on DOE</span><span>Day 5</span></li>
+          <li><span class="k">Placed</span><span>22 April 2026</span></li>
+          <li><span class="k">First inpatient access</span><span>Pulmonary 3W</span></li>
+        </dl></div>
+      <p class="muted" style="margin-top:0.8rem">Secondary BSI is attributed to the localized infection, not the line.</p>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 4</p>
+      <h3 class="display">Gaps</h3>
+      <div class="verdict-bar">No actionable gaps</div>
+      <p class="muted">Paired cultures, symptoms, and labs are sufficient for both surveillance and bedside lanes.</p>
+    </section>
+  </div>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <p class="label-micro">Synthetic fixture</p>
+        <h2 class="display">Pulmonary spillover</h2>
+        <p class="muted">CF flare. Sputum and blood grow the same Pseudomonas inside the SBAP. Invented for engine tests — not a real patient.</p>
+      </div>
+      <span class="badge badge-ok">Engine matches expected JSON</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div><p class="label-micro">Expected</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Secondary BSI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: false,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;biofilm-not-supported&quot;,
+  &quot;deltaTtpMinutes&quot;: 18,
+  &quot;salvageEligible&quot;: true
+}</pre></div>
+      <div><p class="label-micro">Computed</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Secondary BSI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: false,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;biofilm-not-supported&quot;,
+  &quot;deltaTtpMinutes&quot;: 18,
+  &quot;salvageEligible&quot;: true
+}</pre></div>
+    </div>
+  </section>
+</div>
+</div>
+<div class="page" id="page-case-gap-park">
+<div class="aegis-shell">
+  <header class="aegis-header">
+    <a class="brand" href="#queue">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="brand-name">Aegis</span>
+        <span class="brand-sub">BSI adjudication</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <a class="current" href="#queue">Queue</a>
+      <a class="" href="#spec">Spec</a>
+    </nav>
+    <p class="window-meta">Synthetic review window<strong>18–24 Aug 2026</strong></p>
+  </header>
+</div>
+
+<a class="back" href="#queue">← Queue</a>
+<p class="label-micro">Synthetic case · Hem/Onc 4A · MRN 00825019</p>
+<h1 class="display">Leo Park</h1>
+<p class="muted">6M · Relapsed neuroblastoma</p>
+<p class="lede">The reporting engine can still classify this as a primary CLABSI — S. aureus is a recognized pathogen. The clinical engine cannot. Without a paired peripheral culture, extraction is a guess. The Gaps card stops the reflex pull and sends nursing back for the missing set.</p>
+<div style="margin-top:1.25rem">
+<div class="pair pair-lg">
+  <div class="lane danger">
+    <div class="label-micro">Surveillance class · quality</div>
+    <div class="lane-title">Primary CLABSI</div>
+    <div class="lane-sub">Counts in SIR numerator</div>
+    <div style="margin-top:0.7rem"><span class="badge badge-danger">LCBI-1</span></div>
+  </div>
+  <div class="lane warn">
+    <div class="label-micro">Bedside action · clinical</div>
+    <div class="lane-title">Draw a peripheral set</div>
+    <div class="lane-sub">No paired peripheral · ΔTTP unknown</div>
+    <p class="lane-sub" style="margin-top:0.7rem">ΔTTP cannot be calculated. Draw a paired peripheral set before any extraction decision.</p>
+  </div>
+</div>
+</div>
+<div class="stack" style="margin-top:1.5rem">
+  <section class="card">
+    <div style="display:flex;justify-content:space-between"><p class="label-micro">Infection window period</p>
+      <p class="muted" style="margin:0">7 days · DOE 2026-08-23</p></div>
+    <div class="iwp"><div class="iwp-day"><div class="wd">THU</div><div class="dn">20</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">FRI</div><div class="dn">21</div><div class="anc">2100</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">SAT</div><div class="dn">22</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day doe"><div class="wd">SUN</div><div class="dn">23</div><div class="anc">1800</div><div class="dots"><span class="dot"></span><span class="dot fe"></span></div></div><div class="iwp-day"><div class="wd">MON</div><div class="dn">24</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">TUE</div><div class="dn">25</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">WED</div><div class="dn">26</div><div class="anc">—</div><div class="dots"></div></div></div>
+    <p class="muted" style="margin-top:0.7rem">Figures are ANC (cells/mm³). Marks: blood, extravascular culture, fever.</p>
+  </section>
+  <section class="card">
+    <p class="label-micro">Surveillance path</p>
+    <div class="phases"><div class="phase"><p class="label-micro">1.0 Integrity check</p><p class="display" style="font-size:1rem;margin-top:0.4rem">True BSI · LCBI-1</p><p>LCBI 1: a recognized bacterial or fungal pathogen isolated from ≥1 blood specimen.</p></div><div class="phase"><p class="label-micro">2.0 Source origin</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Primary BSI</p><p>No matching qualifying extravascular infection under NHSN rules inside the SBAP.</p></div><div class="phase"><p class="label-micro">3.0 Pathophysiology</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Standard primary BSI</p><p>Host does not meet neutropenia/HSCT criteria, or the isolate is not an MBI organism.</p></div><div class="phase"><p class="label-micro">4.0 Device eligibility</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Primary CLABSI</p><p>Eligible central line first accessed in an inpatient location and in place &gt;2 consecutive calendar days on the date of event.</p></div></div>
+  </section>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:0.75rem;align-items:start">
+      <div><p class="label-micro">Parallel bedside lane · 5.0</p><h2 class="display">Should we pull this line?</h2></div>
+      <span class="badge badge-warn">Draw a peripheral set</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div>
+        <div class="muted" style="display:flex;justify-content:space-between;font-size:0.75rem"><span>Simultaneous</span><span>120 min</span><span>Biofilm</span></div>
+        <div class="gauge-track"><div class="gauge-mid"></div>
+          <div class="gauge-knob" style="left:0%;background:var(--ink-subtle)"></div>
+        </div>
+        <div class="delta">—<span style="font-size:1rem;color:var(--ink-muted);margin-left:0.3rem">no ΔTTP</span></div>
+        <ul class="facts"><li><span class="k">Central TTP</span><span class="" style="text-align:right;max-width:60%">7.40 h</span></li><li><span class="k">Peripheral TTP</span><span class="warn" style="text-align:right;max-width:60%">Not drawn</span></li><li><span class="k">ΔTTP</span><span class="warn" style="text-align:right;max-width:60%">Cannot calculate</span></li></ul>
+      </div>
+      <div class="lane warn" style="border-radius:12px">
+        <p class="label-micro">Clinical recommendation</p>
+        <p class="lane-title" style="font-size:1.15rem">Actionable gap · missing pair</p>
+        <p class="lane-sub" style="margin-top:0.5rem">ΔTTP cannot be calculated. Draw a paired peripheral set before any extraction decision.</p>
+      </div>
+    </div>
+  </section>
+  <div class="grid-2">
+    <section class="card">
+      <p class="label-micro">Card 1</p>
+      <h3 class="display">MBI profile</h3>
+      <div class="verdict-bar">Standard primary BSI</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">MBI master list</span><span class="" style="text-align:right;max-width:60%">Not an MBI organism</span></li><li><span class="k">Non-MBI co-isolates in IWP</span><span class="warn" style="text-align:right;max-width:60%">Staphylococcus aureus</span></li><li><span class="k">Neutropenia pathway</span><span class="" style="text-align:right;max-width:60%">0 IWP days with ANC &lt;500 (need ≥2)</span></li><li><span class="k">Allogeneic HSCT pathway</span><span class="" style="text-align:right;max-width:60%">No allogeneic HSCT</span></li></ul></div>
+      <p class="muted" style="margin:0.8rem 0 0;font-size:0.75rem">ANC trajectory</p>
+      <div class="anc-bars"><span class="anc-col"><span class="anc-bar" style="height:100%"></span><span class="anc-lab">21 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:86%"></span><span class="anc-lab">23 Aug</span></span></div>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 2</p>
+      <h3 class="display">Alternative source</h3>
+      <div class="verdict-bar">Primary BSI</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">SBAP</span><span class="" style="text-align:right;max-width:60%">2026-08-20 → 2026-09-05</span></li><li><span class="k">Matching extravascular cultures</span><span class="" style="text-align:right;max-width:60%">None</span></li><li><span class="k">Site-specific infection</span><span class="" style="text-align:right;max-width:60%">Not verified</span></li></ul></div>
+      <div style="margin-top:0.8rem"><p class="muted">No extravascular isolates on the record.</p></div>
+    </section>
+    <section class="card">
+      <p class="label-micro">Card 3</p>
+      <h3 class="display">Line context</h3>
+      <div class="verdict-bar">Primary CLABSI</div>
+      <div style="margin-top:0.9rem"><dl class="facts">
+          <li><span class="k">Device</span><span>Hickman (double lumen)</span></li>
+          <li><span class="k">Calendar day on DOE</span><span>Day 22</span></li>
+          <li><span class="k">Placed</span><span>2 August 2026</span></li>
+          <li><span class="k">First inpatient access</span><span>Hem/Onc 4A</span></li>
+        </dl></div>
+      <p class="muted" style="margin-top:0.8rem">Eligible central line first accessed in an inpatient location and in place &gt;2 consecutive calendar days on the date of event.</p>
+    </section>
+    <section class="card warn">
+      <p class="label-micro">Card 4</p>
+      <h3 class="display">Gaps</h3>
+      <div class="verdict-bar">1 gap</div>
+      <div class="gap-item lane warn"><strong>No peripheral comparative draw<span class=action>Action</span></strong><p class="muted" style="margin:0.35rem 0 0">ΔTTP cannot be calculated. Nursing should obtain a paired peripheral set before line extraction is initiated.</p></div>
+    </section>
+  </div>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <p class="label-micro">Synthetic fixture</p>
+        <h2 class="display">Surveillance complete, bedside blocked</h2>
+        <p class="muted">S. aureus from the Hickman only. No peripheral set. ΔTTP unknown. Invented for engine tests — not a real patient.</p>
+      </div>
+      <span class="badge badge-ok">Engine matches expected JSON</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div><p class="label-micro">Expected</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Primary CLABSI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: true,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;missing-data&quot;,
+  &quot;deltaTtpMinutes&quot;: null,
+  &quot;salvageEligible&quot;: false
+}</pre></div>
+      <div><p class="label-micro">Computed</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Primary CLABSI&quot;,
+  &quot;lcbiType&quot;: &quot;LCBI-1&quot;,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: true,
+  &quot;nhsNReportable&quot;: true,
+  &quot;bedsideStatus&quot;: &quot;missing-data&quot;,
+  &quot;deltaTtpMinutes&quot;: null,
+  &quot;salvageEligible&quot;: false
+}</pre></div>
+    </div>
+  </section>
+</div>
+</div>
+<div class="page" id="page-case-contaminant-alvarez">
+<div class="aegis-shell">
+  <header class="aegis-header">
+    <a class="brand" href="#queue">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="brand-name">Aegis</span>
+        <span class="brand-sub">BSI adjudication</span>
+      </span>
+    </a>
+    <nav class="nav">
+      <a class="current" href="#queue">Queue</a>
+      <a class="" href="#spec">Spec</a>
+    </nav>
+    <p class="window-meta">Synthetic review window<strong>18–24 Aug 2026</strong></p>
+  </header>
+</div>
+
+<a class="back" href="#queue">← Queue</a>
+<p class="label-micro">Synthetic case · Surgical 2E · MRN 00817644</p>
+<h1 class="display">Sofia Alvarez</h1>
+<p class="muted">11F · Postoperative day 6, bowel resection</p>
+<p class="lede">A naive dashboard would fire a CLABSI alert. NHSN would not. One commensal bottle without fever, chills, or hypotension is a contaminant. Suppressing the alert protects the SIR and keeps the team from treating a lab accident as an infection.</p>
+<div style="margin-top:1.25rem">
+<div class="pair pair-lg">
+  <div class="lane ok">
+    <div class="label-micro">Surveillance class · quality</div>
+    <div class="lane-title">Contaminant</div>
+    <div class="lane-sub">Suppressed · surveillance non-event</div>
+    
+  </div>
+  <div class="lane warn">
+    <div class="label-micro">Bedside action · clinical</div>
+    <div class="lane-title">Draw a peripheral set</div>
+    <div class="lane-sub">No paired peripheral · ΔTTP unknown</div>
+    <p class="lane-sub" style="margin-top:0.7rem">ΔTTP cannot be calculated. Draw a paired peripheral set before any extraction decision.</p>
+  </div>
+</div>
+</div>
+<div class="stack" style="margin-top:1.5rem">
+  <section class="card">
+    <div style="display:flex;justify-content:space-between"><p class="label-micro">Infection window period</p>
+      <p class="muted" style="margin:0">7 days · DOE 2026-08-21</p></div>
+    <div class="iwp"><div class="iwp-day"><div class="wd">TUE</div><div class="dn">18</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">WED</div><div class="dn">19</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">THU</div><div class="dn">20</div><div class="anc">5400</div><div class="dots"></div></div><div class="iwp-day doe"><div class="wd">FRI</div><div class="dn">21</div><div class="anc">—</div><div class="dots"><span class="dot"></span></div></div><div class="iwp-day"><div class="wd">SAT</div><div class="dn">22</div><div class="anc">6100</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">SUN</div><div class="dn">23</div><div class="anc">—</div><div class="dots"></div></div><div class="iwp-day"><div class="wd">MON</div><div class="dn">24</div><div class="anc">—</div><div class="dots"></div></div></div>
+    <p class="muted" style="margin-top:0.7rem">Figures are ANC (cells/mm³). Marks: blood, extravascular culture, fever.</p>
+  </section>
+  <section class="card">
+    <p class="label-micro">Surveillance path</p>
+    <div class="phases"><div class="phase"><p class="label-micro">1.0 Integrity check</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Contaminant · non-event</p><p>Surveillance non-event: common commensal from a single bottle, or no matching clinical symptoms — treated as a contaminant.</p></div><div class="phase skipped"><p class="label-micro">2.0 Source origin</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Not reached</p><p>No LCBI — secondary attribution is not evaluated.</p></div><div class="phase skipped"><p class="label-micro">3.0 Pathophysiology</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Not reached</p><p>No LCBI — MBI criteria are not evaluated.</p></div><div class="phase skipped"><p class="label-micro">4.0 Device eligibility</p><p class="display" style="font-size:1rem;margin-top:0.4rem">Not reached</p><p>No LCBI — device eligibility is not evaluated.</p></div></div>
+  </section>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:0.75rem;align-items:start">
+      <div><p class="label-micro">Parallel bedside lane · 5.0</p><h2 class="display">Should we pull this line?</h2></div>
+      <span class="badge badge-warn">Draw a peripheral set</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div>
+        <div class="muted" style="display:flex;justify-content:space-between;font-size:0.75rem"><span>Simultaneous</span><span>120 min</span><span>Biofilm</span></div>
+        <div class="gauge-track"><div class="gauge-mid"></div>
+          <div class="gauge-knob" style="left:0%;background:var(--ink-subtle)"></div>
+        </div>
+        <div class="delta">—<span style="font-size:1rem;color:var(--ink-muted);margin-left:0.3rem">no ΔTTP</span></div>
+        <ul class="facts"><li><span class="k">Central TTP</span><span class="" style="text-align:right;max-width:60%">18.60 h</span></li><li><span class="k">Peripheral TTP</span><span class="warn" style="text-align:right;max-width:60%">Not drawn</span></li><li><span class="k">ΔTTP</span><span class="warn" style="text-align:right;max-width:60%">Cannot calculate</span></li></ul>
+      </div>
+      <div class="lane warn" style="border-radius:12px">
+        <p class="label-micro">Clinical recommendation</p>
+        <p class="lane-title" style="font-size:1.15rem">Actionable gap · missing pair</p>
+        <p class="lane-sub" style="margin-top:0.5rem">ΔTTP cannot be calculated. Draw a paired peripheral set before any extraction decision.</p>
+      </div>
+    </div>
+  </section>
+  <div class="grid-2">
+    <section class="card skipped">
+      <p class="label-micro">Card 1</p>
+      <h3 class="display">MBI profile</h3>
+      <div class="verdict-bar">Not reached</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">Why skipped</span><span class="" style="text-align:right;max-width:60%">No LCBI — MBI criteria are not evaluated.</span></li></ul></div>
+      <p class="muted" style="margin:0.8rem 0 0;font-size:0.75rem">ANC trajectory</p>
+      <div class="anc-bars"><span class="anc-col"><span class="anc-bar" style="height:89%"></span><span class="anc-lab">20 Aug</span></span><span class="anc-col"><span class="anc-bar" style="height:100%"></span><span class="anc-lab">22 Aug</span></span></div>
+    </section>
+    <section class="card skipped">
+      <p class="label-micro">Card 2</p>
+      <h3 class="display">Alternative source</h3>
+      <div class="verdict-bar">Not reached</div>
+      <div style="margin-top:0.9rem"><ul class="facts"><li><span class="k">Why skipped</span><span class="" style="text-align:right;max-width:60%">No LCBI — secondary attribution is not evaluated.</span></li></ul></div>
+      <div style="margin-top:0.8rem"><p class="muted">No extravascular isolates on the record.</p></div>
+    </section>
+    <section class="card skipped">
+      <p class="label-micro">Card 3</p>
+      <h3 class="display">Line context</h3>
+      <div class="verdict-bar">Not reached</div>
+      <div style="margin-top:0.9rem"><dl class="facts">
+          <li><span class="k">Device</span><span>Tunneled Broviac</span></li>
+          <li><span class="k">Calendar day on DOE</span><span>Day 12</span></li>
+          <li><span class="k">Placed</span><span>10 August 2026</span></li>
+          <li><span class="k">First inpatient access</span><span>OR / Surgical 2E</span></li>
+        </dl></div>
+      <p class="muted" style="margin-top:0.8rem">No LCBI — device eligibility is not evaluated.</p>
+    </section>
+    <section class="card warn">
+      <p class="label-micro">Card 4</p>
+      <h3 class="display">Gaps</h3>
+      <div class="verdict-bar">2 gaps</div>
+      <div class="gap-item lane warn"><strong>No peripheral comparative draw<span class=action>Action</span></strong><p class="muted" style="margin:0.35rem 0 0">ΔTTP cannot be calculated. Nursing should obtain a paired peripheral set before line extraction is initiated.</p></div><div class="gap-item lane warn"><strong>Single commensal isolate<span class=action>Action</span></strong><p class="muted" style="margin:0.35rem 0 0">Repeat blood culture kinetics should be watched. A second specimen on the same or next day would reopen LCBI 2/3.</p></div>
+    </section>
+  </div>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>
+        <p class="label-micro">Synthetic fixture</p>
+        <h2 class="display">One bottle, no symptoms</h2>
+        <p class="muted">Single S. epidermidis from the Broviac. Afebrile. Nothing else grows. Invented for engine tests — not a real patient.</p>
+      </div>
+      <span class="badge badge-ok">Engine matches expected JSON</span>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div><p class="label-micro">Expected</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Contaminant&quot;,
+  &quot;lcbiType&quot;: null,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: false,
+  &quot;nhsNReportable&quot;: false,
+  &quot;bedsideStatus&quot;: &quot;missing-data&quot;,
+  &quot;deltaTtpMinutes&quot;: null,
+  &quot;salvageEligible&quot;: false
+}</pre></div>
+      <div><p class="label-micro">Computed</p><pre class="mono">{
+  &quot;surveillanceLabel&quot;: &quot;Contaminant&quot;,
+  &quot;lcbiType&quot;: null,
+  &quot;mbiType&quot;: null,
+  &quot;countsInSir&quot;: false,
+  &quot;nhsNReportable&quot;: false,
+  &quot;bedsideStatus&quot;: &quot;missing-data&quot;,
+  &quot;deltaTtpMinutes&quot;: null,
+  &quot;salvageEligible&quot;: false
+}</pre></div>
+    </div>
+  </section>
+</div>
+</div>
+</div>
+
+<script>
+function showPage() {
+  var hash = (location.hash || "#queue").slice(1);
+  var id = "page-queue";
+  if (hash === "spec") id = "page-spec";
+  else if (hash.indexOf("case/") === 0) id = "page-case-" + hash.slice(5);
+  document.querySelectorAll(".page").forEach(function (p) { p.classList.remove("on"); });
+  var el = document.getElementById(id) || document.getElementById("page-queue");
+  el.classList.add("on");
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", showPage);
+window.addEventListener("DOMContentLoaded", showPage);
+showPage();
+</script>
+
+</body>
+</html>

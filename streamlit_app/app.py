@@ -12,6 +12,7 @@ import streamlit as st
 
 from cases import CASES, REVIEW_WINDOW, get_case
 from engine import evaluate_case
+from export_html import build_html
 from ui import CSS, case_html, header_html, queue_html, spec_html
 
 ICON = ROOT.parent / "public" / "favicon.svg"
@@ -74,3 +75,11 @@ elif page == "case":
             st.rerun()
 else:
     paint(header_html("queue", REVIEW_WINDOW["label"]) + queue_html(CASES, st.session_state.accepted))
+
+st.download_button(
+    "Download standalone HTML",
+    data=build_html(),
+    file_name="Aegis-synthetic-workbench.html",
+    mime="text/html",
+    help="Single HTML file with the five synthetic cases. Opens in a browser, no Streamlit required.",
+)

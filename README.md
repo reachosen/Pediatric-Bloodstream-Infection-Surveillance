@@ -27,6 +27,8 @@ Each event is a **pair**:
 
 Expected engine outcomes live in [`streamlit_app/fixtures/expected-outcomes.json`](streamlit_app/fixtures/expected-outcomes.json) (`synthetic: true`).
 
+A single-file copy of the workbench is [`Aegis-synthetic-workbench.html`](Aegis-synthetic-workbench.html) — open it in a browser, no Streamlit required.
+
 ## Run locally
 
 ```bash
