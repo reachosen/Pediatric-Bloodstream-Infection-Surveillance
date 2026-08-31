@@ -50,7 +50,7 @@ elif page == "case":
             + """
             <div style="text-align:center;padding:4rem 1rem">
               <h1 class="display">Case not in this window</h1>
-              <p class="muted">That identifier is not one of the five review-window fixtures.</p>
+              <p class="muted">That identifier is not one of the five synthetic review-window fixtures.</p>
               <p><a href="?page=queue">Back to queue</a></p>
             </div>
             """

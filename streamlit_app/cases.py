@@ -1,13 +1,22 @@
+# All CASES are synthetic. Names, MRNs, units, cultures, labs, and
+# timestamps are invented for demonstration and engine tests. Not PHI.
+
 REVIEW_WINDOW = {
     "start": "2026-08-18",
     "end": "2026-08-24",
     "label": "18–24 Aug 2026",
+    "synthetic": True,
+    "disclaimer": (
+        "All patients, identifiers, and laboratory values are synthetic. "
+        "Invented for demonstration and engine tests. Not real patients or PHI."
+    ),
 }
 
 CASES = [
     {
         "id": "mbi-chen",
         "sequence": 1,
+        "synthetic": True,
         "title": "Gut translocation, not the line",
         "hook": "Four-day neutropenic nadir. E. coli in paired bottles. ΔTTP of 12 minutes.",
         "whyItMatters": (
@@ -77,6 +86,7 @@ CASES = [
     {
         "id": "clabsi-reyes",
         "sequence": 2,
+        "synthetic": True,
         "title": "True line biofilm",
         "hook": "PICC day 36. Paired S. epidermidis. Central bottle flagged 160 minutes first.",
         "whyItMatters": (
@@ -142,6 +152,7 @@ CASES = [
     {
         "id": "secondary-haddad",
         "sequence": 3,
+        "synthetic": True,
         "title": "Pulmonary spillover",
         "hook": "CF flare. Sputum and blood grow the same Pseudomonas inside the SBAP.",
         "whyItMatters": (
@@ -222,6 +233,7 @@ CASES = [
     {
         "id": "gap-park",
         "sequence": 4,
+        "synthetic": True,
         "title": "Surveillance complete, bedside blocked",
         "hook": "S. aureus from the Hickman only. No peripheral set. ΔTTP unknown.",
         "whyItMatters": (
@@ -278,6 +290,7 @@ CASES = [
     {
         "id": "contaminant-alvarez",
         "sequence": 5,
+        "synthetic": True,
         "title": "One bottle, no symptoms",
         "hook": "Single S. epidermidis from the Broviac. Afebrile. Nothing else grows.",
         "whyItMatters": (

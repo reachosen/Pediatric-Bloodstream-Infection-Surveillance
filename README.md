@@ -2,7 +2,11 @@
 
 Streamlit workbench for **NHSN-style bloodstream infection review**. A positive blood culture with a central line is not automatically a CLABSI. Aegis runs four sequential surveillance checks, then a parallel bedside ΔTTP lane, so infection prevention and the clinical team see different questions side by side.
 
-Educational demo with five synthetic cases. Not a medical device and not a substitute for NHSN definitions.
+Educational demo. **Not a medical device** and not a substitute for NHSN definitions.
+
+## Synthetic test cases
+
+The five review-window events are **synthetic**. Names, MRNs, units, organisms, labs, and timestamps are invented for demonstration and engine tests. They are not real patients and contain no PHI.
 
 ## What you see
 
@@ -13,7 +17,7 @@ Each event is a **pair**:
 | Surveillance class · quality | Does this count in the SIR? | Teal = excluded / non-event · Pink = Primary CLABSI |
 | Bedside action · clinical | Keep or pull the line? | Teal = salvage · Pink = extract · Gold = missing data |
 
-## Five review-window cases (18–24 Aug 2026)
+## Five synthetic review-window cases (18–24 Aug 2026)
 
 1. **Maya Chen** — *E. coli* MBI-LCBI, ΔTTP 12 min → excluded from SIR, salvage the line
 2. **Jonah Reyes** — *S. epidermidis* biofilm, ΔTTP 160 min → Primary CLABSI, extract
@@ -21,7 +25,7 @@ Each event is a **pair**:
 4. **Leo Park** — *S. aureus*, line-only draw → Primary CLABSI, gold gap: draw a peripheral
 5. **Sofia Alvarez** — single commensal bottle → contaminant, gold gap: redraw
 
-Expected engine outcomes live in [`streamlit_app/fixtures/expected-outcomes.json`](streamlit_app/fixtures/expected-outcomes.json).
+Expected engine outcomes live in [`streamlit_app/fixtures/expected-outcomes.json`](streamlit_app/fixtures/expected-outcomes.json) (`synthetic: true`).
 
 ## Run locally
 
@@ -45,6 +49,6 @@ Open the URL Streamlit prints (usually http://localhost:8501).
 ## Repo layout
 
 ```
-streamlit_app/     Streamlit UI, NHSN engine, fixtures
+streamlit_app/     Streamlit UI, NHSN engine, synthetic fixtures
 .streamlit/        Theme
 ```

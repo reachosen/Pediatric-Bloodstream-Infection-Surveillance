@@ -372,7 +372,7 @@ def header_html(active: str, window_label: str) -> str:
       <a class="{q}" href="?page=queue">Queue</a>
       <a class="{s}" href="?page=spec">Spec</a>
     </nav>
-    <p class="window-meta">Review window<strong>{escape(window_label)}</strong></p>
+    <p class="window-meta">Synthetic review window<strong>{escape(window_label)}</strong></p>
   </header>
 </div>
 """
@@ -411,9 +411,9 @@ def queue_html(cases: list[dict], accepted: dict[str, bool]) -> str:
         )
     return f"""
 <p class="label-micro">Why this workbench exists</p>
-<p class="edition">Streamlit edition</p>
+<p class="edition">Streamlit edition · synthetic cases</p>
 <h1 class="display">A positive blood culture is not a CLABSI.</h1>
-<p class="lede">Five flagged cultures from last week. A naive “line plus bug” rule would have added all five to the SIR. Two belong there. The rest are mucosa, lung, or a single contaminated bottle — and two of the lines should stay in.</p>
+<p class="lede">Five <strong>synthetic</strong> flagged cultures — invented patients, MRNs, and labs, not real records. A naive “line plus bug” rule would have added all five to the SIR. Two belong there. The rest are mucosa, lung, or a single contaminated bottle — and two of the lines should stay in.</p>
 <div class="stats">
   <div class="stat"><div class="k">Naive CLABSI calls</div><div class="v">{summary['naiveClabsi']}</div><div class="h">Every positive + a line</div></div>
   <div class="stat em"><div class="k">Aegis SIR numerator</div><div class="v">{summary['sirNumerator']}</div><div class="h">What NHSN should count</div></div>
@@ -421,7 +421,7 @@ def queue_html(cases: list[dict], accepted: dict[str, bool]) -> str:
   <div class="stat danger"><div class="k">Lines to extract</div><div class="v">{summary['extract']}</div><div class="h">Biofilm pattern supported</div></div>
 </div>
 <div style="display:flex;justify-content:space-between;align-items:end;gap:1rem;flex-wrap:wrap;margin:0 0 0.35rem;">
-  <div><p class="label-micro">Adjudication queue</p><h2 class="display">Open events</h2></div>
+  <div><p class="label-micro">Synthetic adjudication queue</p><h2 class="display">Open events</h2></div>
   <p class="muted" style="margin:0">{summary['excluded']} of {summary['total']} excluded from the SIR</p>
 </div>
 <p class="legend">
@@ -583,7 +583,7 @@ def case_html(c: dict, result: dict, accepted: bool) -> str:
 
     return f"""
 <a class="back" href="?page=queue">← Queue</a>
-<p class="label-micro">{escape(c['patient']['unit'])} · MRN {escape(c['patient']['mrn'])}</p>
+<p class="label-micro">Synthetic case · {escape(c['patient']['unit'])} · MRN {escape(c['patient']['mrn'])}</p>
 <h1 class="display">{escape(c['patient']['name'])}</h1>
 <p class="muted">{c['patient']['ageYears']}{escape(c['patient']['sex'])} · {escape(c['patient']['diagnosis'])}</p>
 <p class="lede">{escape(c['whyItMatters'])}</p>
@@ -653,9 +653,9 @@ def case_html(c: dict, result: dict, accepted: bool) -> str:
   <section class="card">
     <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
       <div>
-        <p class="label-micro">Fixture</p>
+        <p class="label-micro">Synthetic fixture</p>
         <h2 class="display">{escape(c['title'])}</h2>
-        <p class="muted">{escape(c['hook'])}</p>
+        <p class="muted">{escape(c['hook'])} Invented for engine tests — not a real patient.</p>
       </div>
       {badge("Engine matches expected JSON" if match else "Engine diverges from fixture", "ok" if match else "danger")}
     </div>
@@ -684,6 +684,7 @@ def spec_html(cases: list[dict]) -> str:
     for c in cases:
         r = evaluate_case(c)
         payload = {
+            "synthetic": True,
             "id": c["id"],
             "patient": c["patient"],
             "line": c["line"],
@@ -697,7 +698,7 @@ def spec_html(cases: list[dict]) -> str:
         fixtures.append(
             f"""<article class="card">
               <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap">
-                <div><p class="label-micro">Case {c['sequence']}</p>
+                <div><p class="label-micro">Synthetic case {c['sequence']}</p>
                 <h3 class="display">{escape(c['title'])}</h3>
                 <p class="muted">{escape(c['hook'])}</p></div>
                 {badge("Pass" if r['fixture']['matches'] else "Fail", "ok" if r['fixture']['matches'] else "danger")}
@@ -707,11 +708,11 @@ def spec_html(cases: list[dict]) -> str:
         )
     return f"""
 <p class="label-micro">Developer spec</p>
-<p class="edition">Streamlit edition</p>
+<p class="edition">Streamlit edition · synthetic cases</p>
 <h1 class="display">Four surveillance layers. One bedside question.</h1>
-<p class="lede">Fixtures below are the source of truth for expected outcomes. The live engine evaluates the same JSON.</p>
+<p class="lede">The JSON below is the source of truth for expected outcomes. Every test case is synthetic: names, MRNs, units, cultures, and timestamps are invented. The live engine evaluates the same objects.</p>
 <div class="grid-2" style="margin-top:1.5rem">{step_html}</div>
-<h2 class="display" style="margin:2rem 0 0.5rem">JSON test cases</h2>
-<p class="muted">Each fixture carries an expected object. The engine must match it.</p>
+<h2 class="display" style="margin:2rem 0 0.5rem">Synthetic JSON test cases</h2>
+<p class="muted">Not real patients or PHI. Each fixture carries an expected object. The engine must match it.</p>
 <div class="stack" style="margin-top:1rem">{''.join(fixtures)}</div>
 """

@@ -1,18 +1,22 @@
 {
+  "synthetic": true,
+  "disclaimer": "All patients, identifiers, and laboratory values are synthetic. Invented for demonstration and engine tests. Not real patients or PHI.",
   "reviewWindow": {
     "start": "2026-08-18",
     "end": "2026-08-24",
-    "label": "18\u201324 Aug 2026"
+    "label": "18\u201324 Aug 2026",
+    "synthetic": true,
+    "disclaimer": "All patients, identifiers, and laboratory values are synthetic. Invented for demonstration and engine tests. Not real patients or PHI."
   },
   "allFixturesMatch": true,
   "cases": [
     {
       "id": "mbi-chen",
       "sequence": 1,
+      "synthetic": true,
       "patient": "Maya Chen",
       "unit": "Peds Oncology 4B",
       "organism": "Escherichia coli",
-      "value": null,
       "expected": {
         "surveillanceLabel": "MBI-LCBI",
         "lcbiType": "LCBI-1",
@@ -38,10 +42,10 @@
     {
       "id": "clabsi-reyes",
       "sequence": 2,
+      "synthetic": true,
       "patient": "Jonah Reyes",
       "unit": "PICU 1",
       "organism": "Staphylococcus epidermidis",
-      "value": null,
       "expected": {
         "surveillanceLabel": "Primary CLABSI",
         "lcbiType": "LCBI-2",
@@ -67,10 +71,10 @@
     {
       "id": "secondary-haddad",
       "sequence": 3,
+      "synthetic": true,
       "patient": "Amira Haddad",
       "unit": "Pulmonary 3W",
       "organism": "Pseudomonas aeruginosa",
-      "value": null,
       "expected": {
         "surveillanceLabel": "Secondary BSI",
         "lcbiType": "LCBI-1",
@@ -96,10 +100,10 @@
     {
       "id": "gap-park",
       "sequence": 4,
+      "synthetic": true,
       "patient": "Leo Park",
       "unit": "Hem/Onc 4A",
       "organism": "Staphylococcus aureus",
-      "value": null,
       "expected": {
         "surveillanceLabel": "Primary CLABSI",
         "lcbiType": "LCBI-1",
@@ -125,10 +129,10 @@
     {
       "id": "contaminant-alvarez",
       "sequence": 5,
+      "synthetic": true,
       "patient": "Sofia Alvarez",
       "unit": "Surgical 2E",
       "organism": "Staphylococcus epidermidis",
-      "value": null,
       "expected": {
         "surveillanceLabel": "Contaminant",
         "lcbiType": null,
